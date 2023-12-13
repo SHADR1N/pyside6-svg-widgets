@@ -316,7 +316,7 @@ class QIconSvg(QLabel):
         super().mouseReleaseEvent(event)
 
 
-class QCustomAbstractButton(QPushButton):
+class QSvgButton(QPushButton):
     def __init__(self, svg_path: Optional[str] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.size = (20, 20)
