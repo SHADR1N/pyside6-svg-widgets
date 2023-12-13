@@ -15,7 +15,7 @@ STYLE_WIDGET = """
     background: #1E293B;
     font: 12pt;
 }
-QToolButton, #svgWidget {
+#svgWidget {
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
@@ -49,8 +49,8 @@ class SvgButtonExample(QWidget):
         super().__init__()
 
         self.setMinimumSize(400, 200)
-        self.setStyleSheet(STYLE_WIDGET)
         self.__initUi()
+        self.setStyleSheet(STYLE_WIDGET)
 
     def __initUi(self):
         newButton = QSvgButton()
@@ -69,11 +69,10 @@ class SvgButtonExample(QWidget):
             'icons/minus.svg',
             False,
             False,
-            "left"
+            "left",
         )
-        dropButton.setObjectName(u"svgWidget")
         dropButton.setIconSize(22, 22)
-        dropButton.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        dropButton.setObjectName(u"svgWidget")
 
         dropButton.setFixedSize(180, 40)
         dropButton.layout().setSpacing(10)

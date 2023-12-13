@@ -14,37 +14,22 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtCore import Qt, QTimer, QSize, Signal
 
 
-@lru_cache(maxsize=25)
+@lru_cache()
 def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
-    # Splitting the style sheet by '}' to get individual style blocks
 
     style_blocks = style_sheet.split('}')
     for block in style_blocks:
-        # Check if this block contains the style for the specific widget\
 
-        if not any([hover, pressed]):
-            find_slice = object_name
+        if not any([hover, pressed]) and object_name in block.strip():
+            style_rules = block.split('{')[-1].strip()
 
-        elif hover:
-            find_slice = f"{object_name}:hover"
+        elif hover and f'{object_name}:hover' in block.strip():
+            style_rules = block.split('{')[-1].strip()
 
-        elif pressed:
-            find_slice = f"{object_name}:pressed"
+        elif pressed and f'{object_name}:pressed' in block.strip():
+            style_rules = block.split('{')[-1].strip()
+
         else:
-            return None, None
-
-        first_row = block.strip().split("\n")[0].strip()
-        style_rules = None
-        if not any([hover, pressed]):
-            if find_slice in first_row and not any(
-                    [find_slice + ":hover" in first_row, find_slice + ":pressed" in first_row]
-            ):
-                style_rules = block.split('{')[-1].strip()
-        else:
-            if find_slice in first_row:
-                style_rules = block.split('{')[-1].strip()
-
-        if not style_rules:
             continue
 
         style_string = "\n".join(
@@ -66,7 +51,7 @@ def get_effective_style(widget: QWidget, hover=False, pressed=False, style_filte
 
     while current_widget:
         style_sheet = current_widget.styleSheet()
-        if style_sheet:
+        if style_sheet and object_name in style_sheet:
             return get_color(object_name, style_sheet, hover, pressed, style_filter)
 
         # Move to the parent widget
