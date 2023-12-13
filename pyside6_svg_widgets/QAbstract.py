@@ -210,12 +210,13 @@ class QDropButton(QWidget):
 
 
 class QIconSvg(QLabel):
-    def __init__(self, svg_path: str, *args, **kwargs):
+    def __init__(self, svg_path: Optional[str] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.svg_path = svg_path
         self.size = (20, 20)
         self.disable = False
-        self.setIcon(self.svg_path)
+        if self.svg_path:
+            self.setIcon(self.svg_path)
 
     def setDisabledAnim(self, disable: bool):
         self.disable = disable
@@ -275,9 +276,16 @@ class QIconSvg(QLabel):
 
 
 class QCustomAbstractButton(QPushButton):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, svg_path: Optional[str] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.svg_path = None
+        self.size = (20, 20)
+        self.svg_path = svg_path
+        if self.svg_path:
+            self.setSvg(self.svg_path)
+
+    def setSvgSize(self, width: int, height: int):
+        self.size = (width, height)
+        self.leaveEvent(None)
 
     def setSvg(self, icon):
         self.svg_path = icon
@@ -289,7 +297,7 @@ class QCustomAbstractButton(QPushButton):
 
         # Render SVG with the specified color
         renderer = QSvgRenderer(self.svg_path)
-        pixmap = QPixmap(100, 100)  # Set desired icon size
+        pixmap = QPixmap(*self.size)  # Set desired icon size
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
         renderer.render(painter)
@@ -306,7 +314,6 @@ class QCustomAbstractButton(QPushButton):
     def leaveEvent(self, event):
         effective_style = get_effective_style(self)
         self.updateIcon(effective_style)
-        self.updateIcon(effective_style)
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
@@ -315,6 +322,10 @@ class QCustomAbstractButton(QPushButton):
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
-        effective_style = get_effective_style(self)
+        if self.underMouse():
+            effective_style = get_effective_style(self, hover=True)
+        else:
+            effective_style = get_effective_style(self)
+
         self.updateIcon(effective_style)
         super().mouseReleaseEvent(event)
