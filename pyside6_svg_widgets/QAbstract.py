@@ -338,7 +338,7 @@ class QSvgButton(QPushButton):
         QTimer.singleShot(100, partial(self.leaveEvent, None))
 
     def updateIcon(self, color):
-        if not color:
+        if not color or not self.svg_path:
             return
 
         # Render SVG with the specified color
