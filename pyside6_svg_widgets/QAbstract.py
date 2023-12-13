@@ -15,7 +15,7 @@ from PySide6.QtCore import Qt, QTimer, QSize, Signal
 
 
 @lru_cache(maxsize=25)
-def get_color(object_name, style_sheet, hover=False, pressed=False, _filter="icon-color"):
+def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
     # Splitting the style sheet by '}' to get individual style blocks
 
     style_blocks = style_sheet.split('}')
@@ -34,15 +34,17 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, _filter="ico
             continue
 
         style_string = "\n".join(
-            [i.strip() for i in style_rules.split("\n") if i.strip().startswith(_filter)])
+            [i.strip() for i in style_rules.split("\n") if i.strip().startswith(style_filter)])
         if style_string:
-            pattern = _filter + r":\s*([^;]+);"
+            pattern = style_filter + r":\s*([^;]+);"
             matches = re.findall(pattern, style_string)
-            return matches[0] if matches else None, style_sheet
+            _match = matches[0] if matches else None
+            return _match, style_sheet
 
     return None, None
 
-def get_effective_style(widget: QWidget, hover=False, pressed=False, _filter="icon-color"):
+
+def get_effective_style(widget: QWidget, hover=False, pressed=False, style_filter="icon-color"):
     """Get the effective style of a widget, considering parent styles."""
     object_name = widget.objectName()
     current_widget = widget
@@ -50,7 +52,7 @@ def get_effective_style(widget: QWidget, hover=False, pressed=False, _filter="ic
     while current_widget:
         style_sheet = current_widget.styleSheet()
         if style_sheet:
-            return get_color(object_name, style_sheet, hover, pressed, _filter)
+            return get_color(object_name, style_sheet, hover, pressed, style_filter)
 
         # Move to the parent widget
         current_widget = current_widget.parentWidget()

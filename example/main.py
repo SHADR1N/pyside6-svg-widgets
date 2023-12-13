@@ -1,6 +1,6 @@
 import sys
 
-from pyside6_svg_widgets import QCustomAbstractButton, QIconSvg, QDropButton
+from pyside6_svg_widgets import QSvgButton, QIconSvg, QDropButton
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QApplication
 from PySide6.QtCore import Qt
@@ -50,7 +50,7 @@ class SvgButtonExample(QWidget):
         self.__initUi()
 
     def __initUi(self):
-        newButton = QCustomAbstractButton()
+        newButton = QSvgButton()
         newButton.setObjectName(u"svgWidget")
         newButton.setSvg('icons/message.svg')
         newButton.setText("  Message")
@@ -65,7 +65,7 @@ class SvgButtonExample(QWidget):
             'icons/right_arrow.svg',
             'icons/minus.svg',
             False,
-            True,
+            False,
             "left"
         )
         dropButton.setObjectName(u"svgWidget")
