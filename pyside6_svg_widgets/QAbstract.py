@@ -15,7 +15,12 @@ from PySide6.QtCore import Qt, QTimer, QSize, Signal
 
 
 @lru_cache()
-def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
+def get_color(init_widget, style_sheet, hover=False, pressed=False, style_filter="icon-color", string_widget=None):
+    if string_widget:
+        object_name = string_widget
+    else:
+        object_name = init_widget.objectName()
+
     style_blocks = style_sheet.split('}')
     for block in style_blocks:
 
@@ -40,7 +45,12 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter
             _match = matches[0] if matches else None
             return _match, style_sheet
 
-    return None, None
+    if string_widget:
+        return None, None
+    else:
+        return get_color(init_widget=init_widget, style_sheet=style_sheet, hover=hover, pressed=pressed,
+                         style_filter=style_filter,
+                         string_widget=type(init_widget).__name__)
 
 
 def get_effective_style(init_widget: QWidget, hover=False, pressed=False, style_filter="icon-color",
@@ -56,7 +66,7 @@ def get_effective_style(init_widget: QWidget, hover=False, pressed=False, style_
     while current_widget:
         style_sheet = current_widget.styleSheet()
         if style_sheet and object_name in style_sheet:
-            x, y = get_color(object_name, style_sheet, hover, pressed, style_filter)
+            x, y = get_color(init_widget, style_sheet, hover, pressed, style_filter)
             if x and y:
                 return x, y
 
@@ -190,7 +200,7 @@ class QDropButton(QWidget):
         if not self.stylecode:
             effective_style, self.stylecode = get_effective_style(self, hover=True)
         else:
-            effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
+            effective_style, _ = get_color(self, self.stylecode, hover=True)
         self.updateIcon(effective_style, hover)
         super().enterEvent(event)
 
@@ -201,7 +211,7 @@ class QDropButton(QWidget):
         if not self.stylecode:
             effective_style, self.stylecode = get_effective_style(self)
         else:
-            effective_style, _ = get_color(self.objectName(), self.stylecode)
+            effective_style, _ = get_color(self, self.stylecode)
         self.updateIcon(effective_style, self.state_release)
         super().leaveEvent(event)
 
@@ -214,7 +224,7 @@ class QDropButton(QWidget):
         if not self.stylecode:
             effective_style, self.stylecode = get_effective_style(self, pressed=True)
         else:
-            effective_style, _ = get_color(self.objectName(), self.stylecode, pressed=True)
+            effective_style, _ = get_color(self, self.stylecode, pressed=True)
         self.updateIcon(effective_style, hover)
         super().mousePressEvent(event)
 
@@ -235,12 +245,12 @@ class QDropButton(QWidget):
             if not self.stylecode:
                 effective_style, self.stylecode = get_effective_style(self, hover=True)
             else:
-                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
+                effective_style, _ = get_color(self, self.stylecode, hover=True)
         else:
             if not self.stylecode:
                 effective_style, self.stylecode = get_effective_style(self, hover=False)
             else:
-                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
+                effective_style, _ = get_color(self, self.stylecode, hover=True)
 
         self.updateIcon(effective_style, hover)
         if event:
@@ -292,7 +302,7 @@ class QIconSvg(QLabel):
             if not self.stylecode:
                 effective_style, self.stylecode = get_effective_style(self, hover=True)
             else:
-                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
+                effective_style, _ = get_color(self, self.stylecode, hover=True)
             self.updateIcon(effective_style)
         super().enterEvent(event)
 
@@ -301,7 +311,7 @@ class QIconSvg(QLabel):
             if not self.stylecode:
                 effective_style, self.stylecode = get_effective_style(self)
             else:
-                effective_style, _ = get_color(self.objectName(), self.stylecode)
+                effective_style, _ = get_color(self, self.stylecode)
             self.updateIcon(effective_style)
         super().leaveEvent(event)
 
@@ -310,7 +320,7 @@ class QIconSvg(QLabel):
             if not self.stylecode:
                 effective_style, self.stylecode = get_effective_style(self, pressed=True)
             else:
-                effective_style, _ = get_color(self.objectName(), self.stylecode, pressed=True)
+                effective_style, _ = get_color(self, self.stylecode, pressed=True)
             self.updateIcon(effective_style)
         super().mousePressEvent(event)
 
@@ -319,12 +329,12 @@ class QIconSvg(QLabel):
             if not self.stylecode:
                 effective_style, self.stylecode = get_effective_style(self, hover=True)
             else:
-                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
+                effective_style, _ = get_color(self, self.stylecode, hover=True)
         else:
             if not self.stylecode:
                 effective_style, self.stylecode = get_effective_style(self)
             else:
-                effective_style, _ = get_color(self.objectName(), self.stylecode)
+                effective_style, _ = get_color(self, self.stylecode)
 
         if not self.disable:
             self.updateIcon(effective_style)
@@ -371,7 +381,7 @@ class QSvgButton(QPushButton):
         if not self.stylecode:
             effective_style, self.stylecode = get_effective_style(self, hover=True)
         else:
-            effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
+            effective_style, _ = get_color(self, self.stylecode, hover=True)
         self.updateIcon(effective_style)
         super().enterEvent(event)
 
@@ -379,7 +389,7 @@ class QSvgButton(QPushButton):
         if not self.stylecode:
             effective_style, self.stylecode = get_effective_style(self)
         else:
-            effective_style, _ = get_color(self.objectName(), self.stylecode)
+            effective_style, _ = get_color(self, self.stylecode)
         self.updateIcon(effective_style)
         super().leaveEvent(event)
 
@@ -387,7 +397,7 @@ class QSvgButton(QPushButton):
         if not self.stylecode:
             effective_style, self.stylecode = get_effective_style(self, pressed=True)
         else:
-            effective_style, _ = get_color(self.objectName(), self.stylecode, pressed=True)
+            effective_style, _ = get_color(self, self.stylecode, pressed=True)
         self.updateIcon(effective_style)
         super().mousePressEvent(event)
 
@@ -396,12 +406,12 @@ class QSvgButton(QPushButton):
             if not self.stylecode:
                 effective_style, self.stylecode = get_effective_style(self, hover=True)
             else:
-                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
+                effective_style, _ = get_color(self, self.stylecode, hover=True)
         else:
             if not self.stylecode:
                 effective_style, self.stylecode = get_effective_style(self)
             else:
-                effective_style, _ = get_color(self.objectName(), self.stylecode)
+                effective_style, _ = get_color(self, self.stylecode)
 
         self.updateIcon(effective_style)
         self.clicked.emit()
