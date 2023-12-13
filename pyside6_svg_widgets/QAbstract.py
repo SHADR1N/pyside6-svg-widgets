@@ -2,6 +2,8 @@ import re
 from functools import partial
 from typing import Optional
 
+from functools import lru_cache
+
 from PySide6.QtWidgets import (
     QPushButton, QWidget,
     QLabel, QHBoxLayout, QStyle, QStyleOption,
@@ -12,7 +14,35 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtCore import Qt, QTimer, QSize, Signal
 
 
-def get_effective_style(widget: QWidget, hover=False, pressed=False, _filter="icon-color") -> str:
+@lru_cache(maxsize=25)
+def get_color(object_name, style_sheet, hover=False, pressed=False, _filter="icon-color"):
+    # Splitting the style sheet by '}' to get individual style blocks
+
+    style_blocks = style_sheet.split('}')
+    for block in style_blocks:
+        # Check if this block contains the style for the specific widget\
+        if not any([hover, pressed]) and block.strip().startswith(f'#{object_name}'):
+            style_rules = block.split('{')[-1].strip()
+
+        elif hover and block.strip().startswith(f'#{object_name}:hover'):
+            style_rules = block.split('{')[-1].strip()
+
+        elif pressed and block.strip().startswith(f'#{object_name}:pressed'):
+            style_rules = block.split('{')[-1].strip()
+
+        else:
+            continue
+
+        style_string = "\n".join(
+            [i.strip() for i in style_rules.split("\n") if i.strip().startswith(_filter)])
+        if style_string:
+            pattern = _filter + r":\s*([^;]+);"
+            matches = re.findall(pattern, style_string)
+            return matches[0] if matches else None, style_sheet
+
+    return None, None
+
+def get_effective_style(widget: QWidget, hover=False, pressed=False, _filter="icon-color"):
     """Get the effective style of a widget, considering parent styles."""
     object_name = widget.objectName()
     current_widget = widget
@@ -20,33 +50,12 @@ def get_effective_style(widget: QWidget, hover=False, pressed=False, _filter="ic
     while current_widget:
         style_sheet = current_widget.styleSheet()
         if style_sheet:
-            # Splitting the style sheet by '}' to get individual style blocks
-            style_blocks = style_sheet.split('}')
-            for block in style_blocks:
-                # Check if this block contains the style for the specific widget\
-                if not any([hover, pressed]) and block.strip().startswith(f'#{object_name}'):
-                    style_rules = block.split('{')[-1].strip()
-
-                elif hover and block.strip().startswith(f'#{object_name}:hover'):
-                    style_rules = block.split('{')[-1].strip()
-
-                elif pressed and block.strip().startswith(f'#{object_name}:pressed'):
-                    style_rules = block.split('{')[-1].strip()
-
-                else:
-                    continue
-
-                style_string = "\n".join(
-                    [i.strip() for i in style_rules.split("\n") if i.strip().startswith(_filter)])
-                if style_string:
-                    pattern = _filter + r":\s*([^;]+);"
-                    matches = re.findall(pattern, style_string)
-                    return matches[0] if matches else None
+            return get_color(object_name, style_sheet, hover, pressed, _filter)
 
         # Move to the parent widget
         current_widget = current_widget.parentWidget()
 
-    return None
+    return None, None
 
 
 class QDropButton(QWidget):
@@ -73,6 +82,7 @@ class QDropButton(QWidget):
         self.only_click = only_click
         self.save_state = save_state
         self.text_alignment = text_alignment
+        self.stylecode = None
 
         if not self.minus_svg:
             self.save_state = False
@@ -164,7 +174,10 @@ class QDropButton(QWidget):
             hover = True
             self.right.setIcon(self.minus_svg)
 
-        effective_style = get_effective_style(self, hover=True)
+        if not self.stylecode:
+            effective_style, self.stylecode = get_effective_style(self, hover=True)
+        else:
+            effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
         self.updateIcon(effective_style, hover)
         super().enterEvent(event)
 
@@ -172,7 +185,10 @@ class QDropButton(QWidget):
         if self.minus_svg:
             self.right.setIcon(self.right_svg)
 
-        effective_style = get_effective_style(self)
+        if not self.stylecode:
+            effective_style, self.stylecode = get_effective_style(self)
+        else:
+            effective_style, _ = get_color(self.objectName(), self.stylecode)
         self.updateIcon(effective_style, self.state_release)
         super().leaveEvent(event)
 
@@ -182,7 +198,10 @@ class QDropButton(QWidget):
             hover = True
             self.right.setIcon(self.minus_svg)
 
-        effective_style = get_effective_style(self, pressed=True)
+        if not self.stylecode:
+            effective_style, self.stylecode = get_effective_style(self, pressed=True)
+        else:
+            effective_style, _ = get_color(self.objectName(), self.stylecode, pressed=True)
         self.updateIcon(effective_style, hover)
         super().mousePressEvent(event)
 
@@ -200,9 +219,15 @@ class QDropButton(QWidget):
                 hover = True
                 self.right.setIcon(self.minus_svg)
 
-            effective_style = get_effective_style(self, hover=True)
+            if not self.stylecode:
+                effective_style, self.stylecode = get_effective_style(self, hover=True)
+            else:
+                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
         else:
-            effective_style = get_effective_style(self, hover=False)
+            if not self.stylecode:
+                effective_style, self.stylecode = get_effective_style(self, hover=False)
+            else:
+                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
 
         self.updateIcon(effective_style, hover)
         if event:
@@ -215,6 +240,7 @@ class QIconSvg(QLabel):
         self.svg_path = svg_path
         self.size = (20, 20)
         self.disable = False
+        self.stylecode = None
         if self.svg_path:
             self.setIcon(self.svg_path)
 
@@ -248,27 +274,42 @@ class QIconSvg(QLabel):
 
     def enterEvent(self, event):
         if not self.disable:
-            effective_style = get_effective_style(self, hover=True)
+            if not self.stylecode:
+                effective_style, self.stylecode = get_effective_style(self, hover=True)
+            else:
+                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
             self.updateIcon(effective_style)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
         if not self.disable:
-            effective_style = get_effective_style(self)
+            if not self.stylecode:
+                effective_style, self.stylecode = get_effective_style(self)
+            else:
+                effective_style, _ = get_color(self.objectName(), self.stylecode)
             self.updateIcon(effective_style)
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
         if not self.disable:
-            effective_style = get_effective_style(self, pressed=True)
+            if not self.stylecode:
+                effective_style, self.stylecode = get_effective_style(self, pressed=True)
+            else:
+                effective_style, _ = get_color(self.objectName(), self.stylecode, pressed=True)
             self.updateIcon(effective_style)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         if self.underMouse():
-            effective_style = get_effective_style(self, hover=True)
+            if not self.stylecode:
+                effective_style, self.stylecode = get_effective_style(self, hover=True)
+            else:
+                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
         else:
-            effective_style = get_effective_style(self)
+            if not self.stylecode:
+                effective_style, self.stylecode = get_effective_style(self)
+            else:
+                effective_style, _ = get_color(self.objectName(), self.stylecode)
 
         if not self.disable:
             self.updateIcon(effective_style)
@@ -280,6 +321,7 @@ class QCustomAbstractButton(QPushButton):
         super().__init__(*args, **kwargs)
         self.size = (20, 20)
         self.svg_path = svg_path
+        self.stylecode = None
         if self.svg_path:
             self.setSvg(self.svg_path)
 
@@ -307,25 +349,40 @@ class QCustomAbstractButton(QPushButton):
         self.setIcon(QIcon(pixmap))
 
     def enterEvent(self, event):
-        effective_style = get_effective_style(self, hover=True)
+        if not self.stylecode:
+            effective_style, self.stylecode = get_effective_style(self, hover=True)
+        else:
+            effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
         self.updateIcon(effective_style)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        effective_style = get_effective_style(self)
+        if not self.stylecode:
+            effective_style, self.stylecode = get_effective_style(self)
+        else:
+            effective_style, _ = get_color(self.objectName(), self.stylecode)
         self.updateIcon(effective_style)
         super().leaveEvent(event)
 
     def mousePressEvent(self, event):
-        effective_style = get_effective_style(self, pressed=True)
+        if not self.stylecode:
+            effective_style, self.stylecode = get_effective_style(self, pressed=True)
+        else:
+            effective_style, _ = get_color(self.objectName(), self.stylecode, pressed=True)
         self.updateIcon(effective_style)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         if self.underMouse():
-            effective_style = get_effective_style(self, hover=True)
+            if not self.stylecode:
+                effective_style, self.stylecode = get_effective_style(self, hover=True)
+            else:
+                effective_style, _ = get_color(self.objectName(), self.stylecode, hover=True)
         else:
-            effective_style = get_effective_style(self)
+            if not self.stylecode:
+                effective_style, self.stylecode = get_effective_style(self)
+            else:
+                effective_style, _ = get_color(self.objectName(), self.stylecode)
 
         self.updateIcon(effective_style)
         super().mouseReleaseEvent(event)
