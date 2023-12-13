@@ -15,22 +15,36 @@ from PySide6.QtCore import Qt, QTimer, QSize, Signal
 
 
 @lru_cache(maxsize=25)
-def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="color"):
+def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
     # Splitting the style sheet by '}' to get individual style blocks
 
     style_blocks = style_sheet.split('}')
     for block in style_blocks:
         # Check if this block contains the style for the specific widget\
-        if not any([hover, pressed]) and block.strip().startswith(f'#{object_name}'):
-            style_rules = block.split('{')[-1].strip()
 
-        elif hover and block.strip().startswith(f'#{object_name}:hover'):
-            style_rules = block.split('{')[-1].strip()
+        if not any([hover, pressed]):
+            find_slice = object_name
 
-        elif pressed and block.strip().startswith(f'#{object_name}:pressed'):
-            style_rules = block.split('{')[-1].strip()
+        elif hover:
+            find_slice = f"{object_name}:hover"
 
+        elif pressed:
+            find_slice = f"{object_name}:pressed"
         else:
+            return None, None
+
+        first_row = block.strip().split("\n")[0].strip()
+        style_rules = None
+        if not any([hover, pressed]):
+            if find_slice in first_row and not any(
+                    [find_slice + ":hover" in first_row, find_slice + ":pressed" in first_row]
+            ):
+                style_rules = block.split('{')[-1].strip()
+        else:
+            if find_slice in first_row:
+                style_rules = block.split('{')[-1].strip()
+
+        if not style_rules:
             continue
 
         style_string = "\n".join(
@@ -45,7 +59,7 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter
     return None, None
 
 
-def get_effective_style(widget: QWidget, hover=False, pressed=False, style_filter="color"):
+def get_effective_style(widget: QWidget, hover=False, pressed=False, style_filter="icon-color"):
     """Get the effective style of a widget, considering parent styles."""
     object_name = widget.objectName()
     current_widget = widget

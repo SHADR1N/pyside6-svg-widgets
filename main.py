@@ -15,7 +15,7 @@ STYLE_WIDGET = """
     background: #1E293B;
     font: 12pt;
 }
-#svgWidget {
+QToolButton, #svgWidget {
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
@@ -23,6 +23,7 @@ STYLE_WIDGET = """
     border: 0px solid transparent;
     border-radius: 5%;
     color: #fff;
+    icon-color: #fff;
 }
 
 #svgWidget:hover {
@@ -30,6 +31,7 @@ STYLE_WIDGET = """
     padding-left: 10px;
     padding-right: 10px;
     color: #496EF6;
+    icon-color: #496EF6;
     background: #344254;
 }
 #svgWidget:pressed {
@@ -37,6 +39,7 @@ STYLE_WIDGET = """
     padding-left: 10px;
     padding-right: 10px;
     color: #3276C3;
+    icon-color: #3276C3;
 }
 """
 
