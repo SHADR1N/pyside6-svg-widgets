@@ -16,7 +16,6 @@ from PySide6.QtCore import Qt, QTimer, QSize, Signal
 
 @lru_cache()
 def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
-
     style_blocks = style_sheet.split('}')
     for block in style_blocks:
 
@@ -44,20 +43,31 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter
     return None, None
 
 
-def get_effective_style(widget: QWidget, hover=False, pressed=False, style_filter="icon-color"):
+def get_effective_style(init_widget: QWidget, hover=False, pressed=False, style_filter="icon-color",
+                        string_widget=None):
     """Get the effective style of a widget, considering parent styles."""
-    object_name = widget.objectName()
-    current_widget = widget
 
+    if string_widget:
+        object_name = string_widget
+    else:
+        object_name = init_widget.objectName()
+
+    current_widget = init_widget
     while current_widget:
         style_sheet = current_widget.styleSheet()
         if style_sheet and object_name in style_sheet:
-            return get_color(object_name, style_sheet, hover, pressed, style_filter)
+            x, y = get_color(object_name, style_sheet, hover, pressed, style_filter)
+            if x and y:
+                return x, y
 
         # Move to the parent widget
         current_widget = current_widget.parentWidget()
 
-    return None, None
+    if string_widget:
+        return None, None
+    else:
+        return get_effective_style(init_widget=init_widget, hover=hover, pressed=pressed, style_filter=style_filter,
+                                   string_widget=type(init_widget).__name__)
 
 
 class QDropButton(QWidget):
