@@ -15,7 +15,7 @@ from PySide6.QtCore import Qt, QTimer, QSize, Signal
 
 
 @lru_cache(maxsize=25)
-def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
+def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="color"):
     # Splitting the style sheet by '}' to get individual style blocks
 
     style_blocks = style_sheet.split('}')
@@ -35,6 +35,7 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter
 
         style_string = "\n".join(
             [i.strip() for i in style_rules.split("\n") if i.strip().startswith(style_filter)])
+
         if style_string:
             pattern = style_filter + r":\s*([^;]+);"
             matches = re.findall(pattern, style_string)
@@ -44,7 +45,7 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter
     return None, None
 
 
-def get_effective_style(widget: QWidget, hover=False, pressed=False, style_filter="icon-color"):
+def get_effective_style(widget: QWidget, hover=False, pressed=False, style_filter="color"):
     """Get the effective style of a widget, considering parent styles."""
     object_name = widget.objectName()
     current_widget = widget
@@ -100,6 +101,7 @@ class QDropButton(QWidget):
         opt = QStyleOption()
         opt.initFrom(self)
         painter = QPainter(self)
+
         style = self.style()
         style.drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, painter, self)
 

@@ -1,6 +1,9 @@
 import sys
 
-from pyside6_svg_widgets import QSvgButton, QIconSvg, QDropButton
+try:
+    from .pyside6_svg_widgets import QSvgButton, QIconSvg, QDropButton
+except ImportError:
+    from pyside6_svg_widgets import QSvgButton, QIconSvg, QDropButton
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QApplication
 from PySide6.QtCore import Qt
@@ -16,7 +19,6 @@ STYLE_WIDGET = """
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
-    icon-color: #CCD5E1;
     background: #1E293B;
     border: 0px solid transparent;
     border-radius: 5%;
@@ -27,7 +29,6 @@ STYLE_WIDGET = """
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
-    icon-color: #496EF6;
     color: #496EF6;
     background: #344254;
 }
@@ -35,7 +36,6 @@ STYLE_WIDGET = """
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
-    icon-color: #3276C3;
     color: #3276C3;
 }
 """
