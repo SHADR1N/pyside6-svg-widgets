@@ -238,6 +238,8 @@ class QDropButton(QWidget):
 
 
 class QIconSvg(QLabel):
+    clicked = Signal()
+
     def __init__(self, svg_path: Optional[str] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.svg_path = svg_path
@@ -316,10 +318,14 @@ class QIconSvg(QLabel):
 
         if not self.disable:
             self.updateIcon(effective_style)
+
+        self.clicked.emit()
         super().mouseReleaseEvent(event)
 
 
 class QSvgButton(QPushButton):
+    clicked = Signal()
+
     def __init__(self, svg_path: Optional[str] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.size = (20, 20)
@@ -388,4 +394,5 @@ class QSvgButton(QPushButton):
                 effective_style, _ = get_color(self.objectName(), self.stylecode)
 
         self.updateIcon(effective_style)
+        self.clicked.emit()
         super().mouseReleaseEvent(event)
