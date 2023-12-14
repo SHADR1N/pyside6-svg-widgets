@@ -24,6 +24,9 @@ def get_color(init_widget, style_sheet, hover=False, pressed=False, style_filter
     style_blocks = style_sheet.split('}')
     for block in style_blocks:
 
+        if not object_name:
+            continue
+
         if not any([hover, pressed]) and object_name in block.strip():
             style_rules = block.split('{')[-1].strip()
 
@@ -344,8 +347,6 @@ class QIconSvg(QLabel):
 
 
 class QSvgButton(QPushButton):
-    clicked = Signal()
-
     def __init__(self, svg_path: Optional[str] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.size = (20, 20)
@@ -414,5 +415,4 @@ class QSvgButton(QPushButton):
                 effective_style, _ = get_color(self, self.stylecode)
 
         self.updateIcon(effective_style)
-        self.clicked.emit()
         super().mouseReleaseEvent(event)
