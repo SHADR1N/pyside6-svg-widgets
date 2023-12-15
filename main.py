@@ -15,7 +15,7 @@ STYLE_WIDGET = """
     background: #1E293B;
     font: 12pt;
 }
-#svgWidget {
+QSvgButton, QIconSvg {
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
@@ -26,7 +26,7 @@ STYLE_WIDGET = """
     icon-color: #fff;
 }
 
-#svgWidget:hover {
+QSvgButton:hover, QIconSvg:hover {
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
@@ -34,7 +34,7 @@ STYLE_WIDGET = """
     icon-color: #496EF6;
     background: #344254;
 }
-#svgWidget:pressed {
+QSvgButton:pressed, QIconSvg:pressed {
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
@@ -54,7 +54,6 @@ class SvgButtonExample(QWidget):
 
     def __initUi(self):
         newButton = QSvgButton()
-        newButton.setObjectName(u"svgWidget")
         newButton.setSvg('icons/message.svg')
         newButton.setText("  Message")
         newButton.setSvgSize(45, 45)

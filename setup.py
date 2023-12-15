@@ -10,7 +10,7 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
 
 setup(
     name='pyside6-svg-widgets',
-    version='0.1.7',
+    version='0.1.8',
     author='SHADRIN',
     author_email='none@gmail.com',
     license='MIT',
