@@ -57,10 +57,11 @@ class SvgButtonExample(QWidget):
         newButton.setObjectName(u"svgWidget")
         newButton.setSvg('icons/message.svg')
         newButton.setText("  Message")
+        newButton.setSvgSize(45, 45)
 
         svgIcon = QIconSvg('icons/message.svg')
         svgIcon.setObjectName(u"svgWidget")
-        svgIcon.setIconSize(19, 19)
+        svgIcon.setSvgSize(25, 25)
 
         dropButton = QDropButton(
             "Message",

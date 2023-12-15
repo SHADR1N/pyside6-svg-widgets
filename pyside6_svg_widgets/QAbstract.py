@@ -135,8 +135,8 @@ class QDropButton(QWidget):
         if isinstance(width, QSize):
             width, height = width.width(), width.height()
         self.size = (width, height)
-        self.right.setIconSize(*self.size)
-        self.left.setIconSize(*self.size)
+        self.right.setSvgSize(*self.size)
+        self.left.setSvgSize(*self.size)
 
     def initWidget(self):
         """Initialize the widget."""
@@ -166,7 +166,7 @@ class QDropButton(QWidget):
         button = QIconSvg(svg_path)
         button.setObjectName(self.objectName())
         button.setDisabledAnim(True)
-        button.setIconSize(*self.size)
+        button.setSvgSize(*self.size)
         return button
 
     def createLabel(self, text):
@@ -281,9 +281,10 @@ class QIconSvg(QLabel):
     def setDisabledAnim(self, disable: bool):
         self.disable = disable
 
-    def setIconSize(self, width: Union[int, QSize], height: Optional[int] = None):
+    def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
         if isinstance(width, QSize):
             width, height = width.width(), width.height()
+
         self.size = (width, height)
         self.leaveEvent(None)
 
@@ -366,6 +367,8 @@ class QSvgButton(QPushButton):
     def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
         if isinstance(width, QSize):
             width, height = width.width(), width.height()
+
+        self.setIconSize(QSize(width, height))
         self.size = (width, height)
         self.leaveEvent(None)
 
