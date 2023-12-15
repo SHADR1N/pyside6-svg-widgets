@@ -1,6 +1,6 @@
 import re
 from functools import partial
-from typing import Optional
+from typing import Optional, Union
 
 from functools import lru_cache
 
@@ -27,7 +27,11 @@ def get_color(init_widget, style_sheet, hover=False, pressed=False, style_filter
         if not object_name:
             continue
 
-        if not any([hover, pressed]) and object_name in block.strip():
+        _filter = any(
+                [(f'{object_name}:hover') in block.strip(),
+                (f'{object_name}:pressed' in block.strip())]
+        )
+        if not any([hover, pressed]) and object_name in block.strip() and not _filter:
             style_rules = block.split('{')[-1].strip()
 
         elif hover and f'{object_name}:hover' in block.strip():
@@ -127,7 +131,9 @@ class QDropButton(QWidget):
         style = self.style()
         style.drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, painter, self)
 
-    def setIconSize(self, width: int, height: int):
+    def setIconSize(self, width: Union[int, QSize], height: Optional[int] = None):
+        if isinstance(width, QSize):
+            width, height = width.width(), width.height()
         self.size = (width, height)
         self.right.setIconSize(*self.size)
         self.left.setIconSize(*self.size)
@@ -275,7 +281,9 @@ class QIconSvg(QLabel):
     def setDisabledAnim(self, disable: bool):
         self.disable = disable
 
-    def setIconSize(self, width: int, height: int):
+    def setIconSize(self, width: Union[int, QSize], height: Optional[int] = None):
+        if isinstance(width, QSize):
+            width, height = width.width(), width.height()
         self.size = (width, height)
         self.leaveEvent(None)
 
@@ -355,7 +363,9 @@ class QSvgButton(QPushButton):
         if self.svg_path:
             self.setSvg(self.svg_path)
 
-    def setSvgSize(self, width: int, height: int):
+    def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
+        if isinstance(width, QSize):
+            width, height = width.width(), width.height()
         self.size = (width, height)
         self.leaveEvent(None)
 
