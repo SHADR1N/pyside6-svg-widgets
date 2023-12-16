@@ -117,7 +117,13 @@ class QDropButton(QWidget):
             width, height = width.width(), width.height()
         self.size = (width, height)
         self.right.setSvgSize(*self.size)
-        self.left.setSvgSize(*self.size)
+
+    def setIconLeftSize(self, width: Union[int, QSize], height: Optional[int] = None):
+        if isinstance(width, QSize):
+            width, height = width.width(), width.height()
+        size = (width, height)
+        self.left.setSvgSize(*size)
+
 
     def initWidget(self):
         """Initialize the widget."""
@@ -377,6 +383,7 @@ class QSvgButton(QPushButton):
             effective_style, self.stylecode = get_effective_style(self, hover=True)
         else:
             effective_style, _ = get_color(type(self).__name__, self.stylecode, hover=True)
+
         self.updateIcon(effective_style)
         super().enterEvent(event)
 
