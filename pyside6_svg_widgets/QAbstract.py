@@ -14,7 +14,6 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtCore import Qt, QTimer, QSize, Signal
 
 
-@lru_cache()
 def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
     style_blocks = style_sheet.split('}')
     for block in style_blocks:
@@ -23,8 +22,10 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter
             continue
 
         _filter = any(
-                [(f'{object_name}:hover') in block.strip(),
-                (f'{object_name}:pressed' in block.strip())]
+                [
+                    (f'{object_name}:hover') in block.strip(),
+                    (f'{object_name}:pressed' in block.strip())
+                ]
         )
         if not any([hover, pressed]) and object_name in block.strip() and not _filter:
             style_rules = block.split('{')[-1].strip()
@@ -279,6 +280,7 @@ class QIconSvg(QLabel):
         self.svg_path = icon
         self.icon = QIcon(self.svg_path)
         self.setPixmap(self.icon.pixmap(QSize(*self.size)))
+        self.setScaledContents(True)
         QTimer.singleShot(100, partial(self.leaveEvent, None))
 
     def updateIcon(self, color):
@@ -343,6 +345,9 @@ class QIconSvg(QLabel):
 
 
 class QSvgButton(QPushButton):
+    enter = Signal()
+    leave = Signal()
+
     def __init__(self, svg_path: Optional[str] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.size = (20, 20)
@@ -367,11 +372,14 @@ class QSvgButton(QPushButton):
         if not color or not self.svg_path:
             return
 
-        # Render SVG with the specified color
         renderer = QSvgRenderer(self.svg_path)
         pixmap = QPixmap(*self.size)  # Set desired icon size
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
+
+        # Устанавливаем режим сохранения пропорций изображения при его масштабировании
+        renderer.setAspectRatioMode(Qt.KeepAspectRatio)
+
         renderer.render(painter)
         painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
         painter.fillRect(pixmap.rect(), color)
@@ -379,41 +387,28 @@ class QSvgButton(QPushButton):
         self.setIcon(QIcon(pixmap))
 
     def enterEvent(self, event):
-        if not self.stylecode:
-            effective_style, self.stylecode = get_effective_style(self, hover=True)
-        else:
-            effective_style, _ = get_color(type(self).__name__, self.stylecode, hover=True)
-
+        self.enter.emit()
+        effective_style, self.stylecode = get_effective_style(self, hover=True)
         self.updateIcon(effective_style)
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        if not self.stylecode:
-            effective_style, self.stylecode = get_effective_style(self)
-        else:
-            effective_style, _ = get_color(type(self).__name__, self.stylecode)
+        self.leave.emit()
+        effective_style, self.stylecode = get_effective_style(self)
         self.updateIcon(effective_style)
-        super().leaveEvent(event)
+        if event:
+            super().leaveEvent(event)
 
     def mousePressEvent(self, event):
-        if not self.stylecode:
-            effective_style, self.stylecode = get_effective_style(self, pressed=True)
-        else:
-            effective_style, _ = get_color(type(self).__name__, self.stylecode, pressed=True)
+        effective_style, self.stylecode = get_effective_style(self, pressed=True)
         self.updateIcon(effective_style)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         if self.underMouse():
-            if not self.stylecode:
-                effective_style, self.stylecode = get_effective_style(self, hover=True)
-            else:
-                effective_style, _ = get_color(type(self).__name__, self.stylecode, hover=True)
+            effective_style, self.stylecode = get_effective_style(self, hover=True)
         else:
-            if not self.stylecode:
-                effective_style, self.stylecode = get_effective_style(self)
-            else:
-                effective_style, _ = get_color(type(self).__name__, self.stylecode)
+            effective_style, self.stylecode = get_effective_style(self)
 
         self.updateIcon(effective_style)
         super().mouseReleaseEvent(event)
