@@ -1,6 +1,7 @@
 import re
 from functools import partial
 from typing import Optional, Union
+import xml.etree.ElementTree as Et
 
 from functools import lru_cache
 
@@ -9,9 +10,10 @@ from PySide6.QtWidgets import (
     QLabel, QHBoxLayout, QStyle, QStyleOption,
     QSizePolicy, QSpacerItem
 )
-from PySide6.QtGui import QPixmap, QPainter, QIcon
+from PySide6.QtGui import QPixmap, QPainter, QIcon, QColor
 from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtCore import Qt, QTimer, QSize, Signal
+from PySide6.QtCore import Qt, QTimer, QSize, Signal, QByteArray
+from PySide6.QtSvgWidgets import QSvgWidget
 
 
 def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
@@ -417,3 +419,85 @@ class QSvgButton(QPushButton):
 
         self.updateIcon(effective_style)
         super().mouseReleaseEvent(event)
+
+
+class QSvgButtonIcon(QSvgWidget):
+    enter = Signal()
+    leave = Signal()
+    clicked = Signal()
+
+    def __init__(self, svg_path: Optional[str] = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.size = (20, 20)
+        self.svg_path = svg_path
+        self.stylecode = None
+
+        self.tree = None
+        self.root = None
+        if self.svg_path:
+            self.setSvg(self.svg_path)
+
+    def event(self, e):
+        super().event(e)
+        if str(e.type()) == "Type.PaletteChange":
+            self.leaveEvent(None)
+        return True
+
+    def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
+        if isinstance(width, QSize):
+            width, height = width.width(), width.height()
+
+        self.setFixedSize(QSize(width, height))
+        self.size = (width, height)
+        self.leaveEvent(None)
+
+    def setSvg(self, icon):
+        self.tree = Et.parse(icon)
+        self.root = self.tree.getroot()
+        self.svg_path = icon
+        QTimer.singleShot(100, partial(self.leaveEvent, None))
+
+    def updateIcon(self, color):
+        if not color or not self.svg_path:
+            return
+
+        c = QColor(color)
+        paths = self.root.findall('.//{*}path')
+        paths2 = self.root.findall('.//{*}svg')
+        for path in paths + paths2:
+            path.set('fill', c.name())
+
+        self.load(self.get_QByteArray())
+        self.setFixedSize(*self.size)
+
+    def get_QByteArray(self):
+        xmlstr = Et.tostring(self.root, encoding='utf8', method='xml')
+        return QByteArray(xmlstr)
+
+    def enterEvent(self, event):
+        self.enter.emit()
+        effective_style, self.stylecode = get_effective_style(self, hover=True)
+        self.updateIcon(effective_style)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.leave.emit()
+        effective_style, self.stylecode = get_effective_style(self)
+        self.updateIcon(effective_style)
+        if event:
+            super().leaveEvent(event)
+
+    def mousePressEvent(self, event):
+        effective_style, self.stylecode = get_effective_style(self, pressed=True)
+        self.updateIcon(effective_style)
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if self.underMouse():
+            effective_style, self.stylecode = get_effective_style(self, hover=True)
+        else:
+            effective_style, self.stylecode = get_effective_style(self)
+
+        self.updateIcon(effective_style)
+        super().mouseReleaseEvent(event)
+        self.clicked.emit()
