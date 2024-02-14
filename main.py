@@ -3,7 +3,7 @@ import sys
 try:
     from .pyside6_svg_widgets import QSvgButton, QIconSvg, QDropButton
 except ImportError:
-    from pyside6_svg_widgets import QSvgButton, QIconSvg, QDropButton
+    from pyside6_svg_widgets import QSvgButton, QIconSvg, QDropButton, QSvgButtonIcon
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QApplication
 from PySide6.QtCore import Qt
@@ -15,7 +15,7 @@ STYLE_WIDGET = """
     background: #1E293B;
     font: 12pt;
 }
-QSvgButton, QIconSvg {
+QSvgButton, QIconSvg, QSvgButtonIcon {
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
@@ -26,12 +26,12 @@ QSvgButton, QIconSvg {
     icon-color: #fff;
 }
 
-QSvgButton:hover, QIconSvg:hover {
+QSvgButton:hover, QSvgButtonIcon:hover, QIconSvg:hover {
     padding:  5px;
     padding-left: 10px;
     padding-right: 10px;
     color: #496EF6;
-    icon-color: #496EF6;
+    icon-color: red;
     background: #344254;
 }
 QSvgButton:pressed, QIconSvg:pressed {
@@ -53,34 +53,40 @@ class SvgButtonExample(QWidget):
         self.setStyleSheet(STYLE_WIDGET)
 
     def __initUi(self):
-        newButton = QSvgButton()
-        newButton.setSvg('icons/message.svg')
-        newButton.setText("  Message")
-        newButton.setSvgSize(45, 45)
+        svg = QSvgButtonIcon()
+        svg.setObjectName(u"svgWidget")
+        svg.setSvg("tasks.svg")
+        svg.clicked.connect(lambda: print("clicked"))
 
-        svgIcon = QIconSvg('icons/message.svg')
-        svgIcon.setObjectName(u"svgWidget")
-        svgIcon.setSvgSize(25, 25)
-
-        dropButton = QDropButton(
-            "Message",
-            'icons/message.svg',
-            'icons/right_arrow.svg',
-            'icons/minus.svg',
-            False,
-            False,
-            "left",
-        )
-        dropButton.setIconSize(22, 22)
-        dropButton.setObjectName(u"svgWidget")
-
-        dropButton.setFixedSize(180, 40)
-        dropButton.layout().setSpacing(10)
+        # newButton = QSvgButton()
+        # newButton.setSvg('icons/message.svg')
+        # newButton.setText("  Message")
+        # newButton.setSvgSize(45, 45)
+        #
+        # svgIcon = QIconSvg('icons/message.svg')
+        # svgIcon.setObjectName(u"svgWidget")
+        # svgIcon.setSvgSize(25, 25)
+        #
+        # dropButton = QDropButton(
+        #     "Message",
+        #     'icons/message.svg',
+        #     'icons/right_arrow.svg',
+        #     'icons/minus.svg',
+        #     False,
+        #     False,
+        #     "left",
+        # )
+        # dropButton.setIconSize(22, 22)
+        # dropButton.setObjectName(u"svgWidget")
+        #
+        # dropButton.setFixedSize(180, 40)
+        # dropButton.layout().setSpacing(10)
 
         lay = QVBoxLayout()
-        lay.addWidget(newButton, alignment=Qt.AlignmentFlag.AlignCenter)
-        lay.addWidget(svgIcon, alignment=Qt.AlignmentFlag.AlignCenter)
-        lay.addWidget(dropButton, alignment=Qt.AlignmentFlag.AlignCenter)
+        lay.addWidget(svg, alignment=Qt.AlignmentFlag.AlignCenter)
+        # lay.addWidget(newButton, alignment=Qt.AlignmentFlag.AlignCenter)
+        # lay.addWidget(svgIcon, alignment=Qt.AlignmentFlag.AlignCenter)
+        # lay.addWidget(dropButton, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.setLayout(lay)
 
