@@ -356,6 +356,12 @@ class QSvgButton(QPushButton):
         if self.svg_path:
             self.setSvg(self.svg_path)
 
+    def event(self, e):
+        super().event(e)
+        if str(e.type()) == "Type.PaletteChange":
+            self.leaveEvent(None)
+        return True
+
     def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
         if isinstance(width, QSize):
             width, height = width.width(), width.height()
@@ -377,7 +383,6 @@ class QSvgButton(QPushButton):
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
 
-        # Устанавливаем режим сохранения пропорций изображения при его масштабировании
         renderer.setAspectRatioMode(Qt.KeepAspectRatio)
 
         renderer.render(painter)
