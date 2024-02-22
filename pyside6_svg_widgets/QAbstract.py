@@ -1,6 +1,6 @@
 import re
 from functools import partial
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 import xml.etree.ElementTree as Et
 
 from functools import lru_cache
@@ -41,8 +41,9 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter
         else:
             continue
 
+        clear = lambda e: str(e).replace("/*", "").replace("*/", "")
         style_string = "\n".join(
-            [i.strip() for i in style_rules.split("\n") if i.strip().startswith(style_filter)])
+            [clear(i).strip() for i in style_rules.split("\n") if clear(i).strip().startswith(style_filter)])
 
         if style_string:
             pattern = style_filter + r":\s*([^;]+);"
@@ -428,9 +429,11 @@ class QSvgButtonIcon(QSvgWidget):
 
     def __init__(self, svg_path: Optional[str] = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setContentsMargins(0, 0, 0, 0)
         self.size = (20, 20)
         self.svg_path = svg_path
         self.stylecode = None
+        self.closed = False
 
         self.tree = None
         self.root = None
@@ -481,6 +484,11 @@ class QSvgButtonIcon(QSvgWidget):
         super().enterEvent(event)
 
     def leaveEvent(self, event):
+        if self.closed:
+            if event:
+                event.ignore()
+            return
+
         self.leave.emit()
         effective_style, self.stylecode = get_effective_style(self)
         self.updateIcon(effective_style)
@@ -492,6 +500,14 @@ class QSvgButtonIcon(QSvgWidget):
         self.updateIcon(effective_style)
         super().mousePressEvent(event)
 
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        self.closed = True
+
+    def deleteLater(self):
+        super().deleteLater()
+        self.closed = True
+
     def mouseReleaseEvent(self, event):
         if self.underMouse():
             effective_style, self.stylecode = get_effective_style(self, hover=True)
@@ -501,3 +517,96 @@ class QSvgButtonIcon(QSvgWidget):
         self.updateIcon(effective_style)
         super().mouseReleaseEvent(event)
         self.clicked.emit()
+
+
+class SVGRender(QPushButton):
+    enter = Signal()
+    leave = Signal()
+
+    def __init__(self, svg_string: Optional[str] = None, size_ic: Optional[Tuple[int, int]] = (25, 25), *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.size_ic = size_ic
+        self.svg_string = svg_string
+        self.closed = False
+        self.set_string_svg(self.svg_string)
+
+    def event(self, e):
+        super().event(e)
+        if str(e.type()) == "Type.PaletteChange":
+            self.leaveEvent(None)
+        return True
+
+    def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
+        if isinstance(width, QSize):
+            width, height = width.width(), width.height()
+
+        self.setIconSize(QSize(width, height))
+        self.size_ic = (width, height)
+        self.leaveEvent()
+
+    def set_string_svg(self, icon):
+        if not icon:
+            return
+
+        self.svg_string = icon
+        QTimer.singleShot(100, partial(self.leaveEvent))
+
+    def updateIcon(self, color):
+        if not color or not self.svg_string:
+            return
+
+        img = self.svg_string.replace("currentColor", color)
+        if "width=" in img and "height=" in img:
+            w = img.split("width=\"")[1].split('"')[0]
+            width = f'width="{w}"'
+            h = img.split("height=\"")[1].split('"')[0]
+            height = f'height="{h}"'
+            img = img.replace(width, 'width="1500"')
+            img = img.replace(height, 'height="1500"')
+
+        pixel = QPixmap(img)
+        pixel.loadFromData(img.encode("utf-8"), "svg")
+
+        self.setIcon(pixel)
+        self.setIconSize(QSize(*self.size_ic))
+        self.setFixedHeight(self.size_ic[0])
+
+    def enterEvent(self, event):
+        self.enter.emit()
+        effective_style, _ = get_effective_style(self, hover=True)
+        self.updateIcon(effective_style)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event=None):
+        if self.closed:
+            if event:
+                event.ignore()
+            return
+
+        self.leave.emit()
+        effective_style, _ = get_effective_style(self)
+        self.updateIcon(effective_style)
+        if event:
+            super().leaveEvent(event)
+
+    def mousePressEvent(self, event):
+        effective_style, _ = get_effective_style(self, pressed=True)
+        self.updateIcon(effective_style)
+        super().mousePressEvent(event)
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        self.closed = True
+
+    def deleteLater(self):
+        super().deleteLater()
+        self.closed = True
+
+    def mouseReleaseEvent(self, event):
+        if self.underMouse():
+            effective_style, _ = get_effective_style(self, hover=True)
+        else:
+            effective_style, _ = get_effective_style(self)
+
+        self.updateIcon(effective_style)
+        super().mouseReleaseEvent(event)
