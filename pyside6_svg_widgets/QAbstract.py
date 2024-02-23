@@ -525,10 +525,6 @@ class QSvgButtonIcon(QSvgWidget):
 
 
 class Config:
-
-    def __init__(self):
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-
     def set_name(self, name):
         self.setObjectName(name)
         self.__class__.__name__ = name
@@ -548,6 +544,7 @@ class SVGRenderRadioButton(QRadioButton, Config):
         self.set_string_svg(self.svg_string)
         self.setCheckable(False)
         self.toggled.connect(lambda e: self.leaveEvent())
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def event(self, e):
         super().event(e)
