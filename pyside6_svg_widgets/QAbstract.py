@@ -8,7 +8,7 @@ from functools import lru_cache
 from PySide6.QtWidgets import (
     QPushButton, QWidget,
     QLabel, QHBoxLayout, QStyle, QStyleOption,
-    QSizePolicy, QSpacerItem
+    QSizePolicy, QSpacerItem, QRadioButton
 )
 from PySide6.QtGui import QPixmap, QPainter, QIcon, QColor
 from PySide6.QtSvg import QSvgRenderer
@@ -520,7 +520,7 @@ class QSvgButtonIcon(QSvgWidget):
         self.clicked.emit()
 
 
-class SVGRender(QPushButton):
+class SVGRender(QRadioButton):
     enter = Signal()
     leave = Signal()
 
