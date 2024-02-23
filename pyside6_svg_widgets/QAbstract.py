@@ -536,6 +536,7 @@ class SVGRender(QRadioButton):
         self.closed = False
         self.set_string_svg(self.svg_string)
         self.setCheckable(False)
+        self.toggled.connect(lambda e: self.leaveEvent())
 
     def event(self, e):
         super().event(e)
