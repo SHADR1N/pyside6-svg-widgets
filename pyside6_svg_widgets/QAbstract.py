@@ -16,6 +16,7 @@ from PySide6.QtCore import Qt, QTimer, QSize, Signal, QByteArray
 from PySide6.QtSvgWidgets import QSvgWidget
 
 
+@lru_cache()
 def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
     style_blocks = style_sheet.split('}')
     for block in style_blocks:
@@ -525,6 +526,7 @@ class SVGRender(QPushButton):
 
     def __init__(self, svg_string: Optional[str] = None, size_ic: Optional[Tuple[int, int]] = (25, 25), *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.clear_cache = None
         self.size_ic = size_ic
         self.svg_string = svg_string
         self.closed = False
@@ -533,6 +535,8 @@ class SVGRender(QPushButton):
     def event(self, e):
         super().event(e)
         if str(e.type()) == "Type.PaletteChange":
+            get_color.cache_clear()
+            self.clear_cache = None
             self.leaveEvent(None)
         return True
 
@@ -568,15 +572,16 @@ class SVGRender(QPushButton):
 
         self.setIcon(pixel)
         self.setIconSize(QSize(*self.size_ic))
-        self.setFixedHeight(self.size_ic[0])
 
     def enterEvent(self, event=None):
         self.enter.emit()
-        effective_style, _ = get_effective_style(self, hover=True)
+        if self.clear_cache:
+            effective_style, _ = get_color(type(self).__name__, self.clear_cache, hover=True)
+        else:
+            effective_style, self.clear_cache = get_effective_style(self, hover=True)
         if event:
             super().enterEvent(event)
-        else:
-            self.updateIcon(effective_style)
+        self.updateIcon(effective_style)
 
     def leaveEvent(self, event=None):
         if self.closed:
@@ -585,14 +590,20 @@ class SVGRender(QPushButton):
             return
 
         self.leave.emit()
-        effective_style, _ = get_effective_style(self)
+        if self.clear_cache:
+            effective_style, _ = get_color(type(self).__name__, self.clear_cache)
+        else:
+            effective_style, self.clear_cache = get_effective_style(self)
         if event:
             super().leaveEvent(event)
-        else:
-            self.updateIcon(effective_style)
+        self.updateIcon(effective_style)
 
     def mousePressEvent(self, event):
-        effective_style, _ = get_effective_style(self, pressed=True)
+        if self.clear_cache:
+            effective_style, _ = get_color(type(self).__name__, self.clear_cache, pressed=True)
+        else:
+            effective_style, self.clear_cache = get_effective_style(self, pressed=True)
+
         self.updateIcon(effective_style)
         super().mousePressEvent(event)
 
@@ -606,9 +617,15 @@ class SVGRender(QPushButton):
 
     def mouseReleaseEvent(self, event):
         if self.underMouse():
-            effective_style, _ = get_effective_style(self, hover=True)
+            if self.clear_cache:
+                effective_style, _ = get_color(type(self).__name__, self.clear_cache, hover=True)
+            else:
+                effective_style, self.clear_cache = get_effective_style(self, hover=True)
         else:
-            effective_style, _ = get_effective_style(self)
+            if self.clear_cache:
+                effective_style, _ = get_color(type(self).__name__, self.clear_cache)
+            else:
+                effective_style, self.clear_cache = get_effective_style(self)
 
         self.updateIcon(effective_style)
         super().mouseReleaseEvent(event)
