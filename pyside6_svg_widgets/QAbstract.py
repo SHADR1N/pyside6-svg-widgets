@@ -550,6 +550,7 @@ class SVGRenderRadioButton(QRadioButton):
         if str(e.type()) == "Type.PaletteChange":
             get_color.cache_clear()
             self.clear_cache = None
+            self.after_load()
             self.leaveEvent(None)
         return True
 
@@ -566,6 +567,13 @@ class SVGRenderRadioButton(QRadioButton):
 
         self.svg_string = icon
         QTimer.singleShot(100, partial(self.leaveEvent))
+        QTimer.singleShot(100, partial(self.after_load))
+
+    def after_load(self):
+        effective_style, self.clear_cache = get_effective_style(self, checked=True)
+        effective_style, self.clear_cache = get_effective_style(self, hover=True)
+        effective_style, self.clear_cache = get_effective_style(self, pressed=True)
+        effective_style, self.clear_cache = get_effective_style(self)
 
     def updateIcon(self, color):
         if not color or not self.svg_string:
@@ -667,6 +675,7 @@ class SVGRenderButton(QToolButton):
         if str(e.type()) == "Type.PaletteChange":
             get_color.cache_clear()
             self.clear_cache = None
+            self.after_load()
             self.leaveEvent(None)
         return True
 
@@ -682,7 +691,15 @@ class SVGRenderButton(QToolButton):
             return
 
         self.svg_string = icon
+
         QTimer.singleShot(100, partial(self.leaveEvent))
+        QTimer.singleShot(100, partial(self.after_load))
+
+    def after_load(self):
+        effective_style, self.clear_cache = get_effective_style(self, checked=True)
+        effective_style, self.clear_cache = get_effective_style(self, hover=True)
+        effective_style, self.clear_cache = get_effective_style(self, pressed=True)
+        effective_style, self.clear_cache = get_effective_style(self)
 
     def updateIcon(self, color):
         if not color or not self.svg_string:
@@ -785,6 +802,7 @@ class SVGRenderIcon(QPushButton):
         if str(e.type()) == "Type.PaletteChange":
             get_color.cache_clear()
             self.clear_cache = None
+            self.after_load()
             self.leaveEvent(None)
         return True
 
@@ -800,7 +818,15 @@ class SVGRenderIcon(QPushButton):
             return
 
         self.svg_string = icon
+
         QTimer.singleShot(100, partial(self.leaveEvent))
+        QTimer.singleShot(100, partial(self.after_load))
+
+    def after_load(self):
+        effective_style, self.clear_cache = get_effective_style(self, checked=True)
+        effective_style, self.clear_cache = get_effective_style(self, hover=True)
+        effective_style, self.clear_cache = get_effective_style(self, pressed=True)
+        effective_style, self.clear_cache = get_effective_style(self)
 
     def updateIcon(self, color):
         if not color or not self.svg_string:
