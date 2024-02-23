@@ -524,12 +524,23 @@ class QSvgButtonIcon(QSvgWidget):
         self.clicked.emit()
 
 
-class SVGRender(QRadioButton):
+class Config:
+
+    def __init__(self):
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def set_name(self, name):
+        self.setObjectName(name)
+        self.__class__.__name__ = name
+
+
+class SVGRenderRadioButton(QRadioButton, Config):
     enter = Signal()
     leave = Signal()
 
     def __init__(self, svg_string: Optional[str] = None, size_ic: Optional[Tuple[int, int]] = (25, 25), *args, **kwargs):
         super().__init__(*args, **kwargs)
+        Config.__init__(self)
         self.clear_cache = None
         self.size_ic = size_ic
         self.svg_string = svg_string
@@ -637,12 +648,13 @@ class SVGRender(QRadioButton):
         super().mouseReleaseEvent(event)
 
 
-class SVGRenderSimple(QPushButton):
+class SVGRenderButton(QPushButton, Config):
     enter = Signal()
     leave = Signal()
 
     def __init__(self, svg_string: Optional[str] = None, size_ic: Optional[Tuple[int, int]] = (25, 25), *args, **kwargs):
         super().__init__(*args, **kwargs)
+        Config.__init__(self)
         self.clear_cache = None
         self.size_ic = size_ic
         self.svg_string = svg_string
@@ -746,3 +758,117 @@ class SVGRenderSimple(QPushButton):
 
         self.updateIcon(effective_style)
         super().mouseReleaseEvent(event)
+
+
+class SVGRenderIcon(QPushButton, Config):
+    enter = Signal()
+    leave = Signal()
+    clicked = Signal()
+
+    def __init__(self, svg_string: Optional[str] = None, size_ic: Optional[Tuple[int, int]] = (25, 25), *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        Config.__init__(self)
+        self.clear_cache = None
+        self.size_ic = size_ic
+        self.svg_string = svg_string
+        self.closed = False
+        self.set_string_svg(self.svg_string)
+
+    def event(self, e):
+        super().event(e)
+        if str(e.type()) == "Type.PaletteChange":
+            get_color.cache_clear()
+            self.clear_cache = None
+            self.leaveEvent(None)
+        return True
+
+    def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
+        if isinstance(width, QSize):
+            width, height = width.width(), width.height()
+
+        self.size_ic = (width, height)
+        self.leaveEvent()
+
+    def set_string_svg(self, icon):
+        if not icon:
+            return
+
+        self.svg_string = icon
+        QTimer.singleShot(100, partial(self.leaveEvent))
+
+    def updateIcon(self, color):
+        if not color or not self.svg_string:
+            return
+
+        img = self.svg_string.replace("currentColor", color)
+        if "width=" in img and "height=" in img:
+            w = img.split("width=\"")[1].split('"')[0]
+            width = f'width="{w}"'
+            h = img.split("height=\"")[1].split('"')[0]
+            height = f'height="{h}"'
+            img = img.replace(width, 'width="1500"')
+            img = img.replace(height, 'height="1500"')
+
+        pixel = QPixmap(img)
+        pixel.loadFromData(img.encode("utf-8"), "svg")
+
+        self.setIcon(pixel)
+        self.setIconSize(QSize(*self.size_ic))
+
+    def enterEvent(self, event=None):
+        self.enter.emit()
+        if self.clear_cache:
+            effective_style, _ = get_color(type(self).__name__, self.clear_cache, hover=True)
+        else:
+            effective_style, self.clear_cache = get_effective_style(self, hover=True)
+        if event:
+            super().enterEvent(event)
+        self.updateIcon(effective_style)
+
+    def leaveEvent(self, event=None):
+        if self.closed:
+            if event:
+                event.ignore()
+            return
+
+        self.leave.emit()
+        if self.clear_cache:
+            effective_style, _ = get_color(type(self).__name__, self.clear_cache, checked=self.isChecked())
+        else:
+            effective_style, self.clear_cache = get_effective_style(self, checked=self.isChecked())
+        if event:
+            super().leaveEvent(event)
+        self.updateIcon(effective_style)
+
+    def mousePressEvent(self, event):
+        if self.clear_cache:
+            effective_style, _ = get_color(type(self).__name__, self.clear_cache, pressed=True)
+        else:
+            effective_style, self.clear_cache = get_effective_style(self, pressed=True)
+
+        self.updateIcon(effective_style)
+        super().mousePressEvent(event)
+
+    def closeEvent(self, event):
+        super().closeEvent(event)
+        self.closed = True
+
+    def deleteLater(self):
+        super().deleteLater()
+        self.closed = True
+
+    def mouseReleaseEvent(self, event):
+        if self.underMouse():
+            if self.clear_cache:
+                effective_style, _ = get_color(type(self).__name__, self.clear_cache, hover=True)
+            else:
+                effective_style, self.clear_cache = get_effective_style(self, hover=True)
+        else:
+            if self.clear_cache:
+                effective_style, _ = get_color(type(self).__name__, self.clear_cache)
+            else:
+                effective_style, self.clear_cache = get_effective_style(self)
+
+        self.updateIcon(effective_style)
+        super().mouseReleaseEvent(event)
+        self.clicked.emit()
