@@ -17,7 +17,7 @@ from PySide6.QtSvgWidgets import QSvgWidget
 
 
 @lru_cache()
-def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter="icon-color"):
+def get_color(object_name, style_sheet, hover=False, pressed=False, checked=False, style_filter="icon-color"):
     style_blocks = style_sheet.split('}')
     for block in style_blocks:
 
@@ -27,13 +27,17 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter
         _filter = any(
                 [
                     (f'{object_name}:hover') in block.strip(),
-                    (f'{object_name}:pressed' in block.strip())
+                    (f'{object_name}:pressed' in block.strip()),
+                    (f'{object_name}:checked' in block.strip()),
                 ]
         )
-        if not any([hover, pressed]) and object_name in block.strip() and not _filter:
+        if not any([hover, pressed, checked]) and object_name in block.strip() and not _filter:
             style_rules = block.split('{')[-1].strip()
 
         elif hover and f'{object_name}:hover' in block.strip():
+            style_rules = block.split('{')[-1].strip()
+
+        elif checked and f'{object_name}:checked' in block.strip():
             style_rules = block.split('{')[-1].strip()
 
         elif pressed and f'{object_name}:pressed' in block.strip():
@@ -55,7 +59,7 @@ def get_color(object_name, style_sheet, hover=False, pressed=False, style_filter
     return None, None
 
 
-def get_effective_style(init_widget: QWidget, hover=False, pressed=False, style_filter="icon-color"):
+def get_effective_style(init_widget: QWidget, hover=False, pressed=False, checked=False, style_filter="icon-color"):
     """Get the effective style of a widget, considering parent styles."""
 
     object_name = type(init_widget).__name__
@@ -63,7 +67,7 @@ def get_effective_style(init_widget: QWidget, hover=False, pressed=False, style_
     while current_widget:
         style_sheet = current_widget.styleSheet()
         if style_sheet and object_name in style_sheet:
-            x, y = get_color(object_name, style_sheet, hover, pressed, style_filter)
+            x, y = get_color(object_name, style_sheet, hover, pressed, checked, style_filter)
             if x and y:
                 return x, y
 
