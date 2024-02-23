@@ -1,1 +1,1 @@
-from .QAbstract import QSvgButton, QIconSvg, QDropButton, QSvgButtonIcon, SVGRender
+from .QAbstract import QSvgButton, QIconSvg, QDropButton, QSvgButtonIcon, SVGRender, SVGRenderSimple
