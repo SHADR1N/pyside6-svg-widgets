@@ -540,7 +540,6 @@ class SVGRender(QPushButton):
         if isinstance(width, QSize):
             width, height = width.width(), width.height()
 
-        self.setIconSize(QSize(width, height))
         self.size_ic = (width, height)
         self.leaveEvent()
 
@@ -571,11 +570,13 @@ class SVGRender(QPushButton):
         self.setIconSize(QSize(*self.size_ic))
         self.setFixedHeight(self.size_ic[0])
 
-    def enterEvent(self, event):
+    def enterEvent(self, event=None):
         self.enter.emit()
         effective_style, _ = get_effective_style(self, hover=True)
-        self.updateIcon(effective_style)
-        super().enterEvent(event)
+        if event:
+            super().enterEvent(event)
+        else:
+            self.updateIcon(effective_style)
 
     def leaveEvent(self, event=None):
         if self.closed:
@@ -585,9 +586,10 @@ class SVGRender(QPushButton):
 
         self.leave.emit()
         effective_style, _ = get_effective_style(self)
-        self.updateIcon(effective_style)
         if event:
             super().leaveEvent(event)
+        else:
+            self.updateIcon(effective_style)
 
     def mousePressEvent(self, event):
         effective_style, _ = get_effective_style(self, pressed=True)
