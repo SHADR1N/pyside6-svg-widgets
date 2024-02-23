@@ -581,9 +581,9 @@ class SVGRender(QRadioButton):
     def enterEvent(self, event=None):
         self.enter.emit()
         if self.clear_cache:
-            effective_style, _ = get_color(type(self).__name__, self.clear_cache, hover=True)
+            effective_style, _ = get_color(type(self).__name__, self.clear_cache, hover=True if not self.isChecked() else False, checked=self.isChecked())
         else:
-            effective_style, self.clear_cache = get_effective_style(self, hover=True)
+            effective_style, self.clear_cache = get_effective_style(self, hover=True if not self.isChecked() else False, checked=self.isChecked())
         if event:
             super().enterEvent(event)
         self.updateIcon(effective_style)
@@ -596,9 +596,9 @@ class SVGRender(QRadioButton):
 
         self.leave.emit()
         if self.clear_cache:
-            effective_style, _ = get_color(type(self).__name__, self.clear_cache)
+            effective_style, _ = get_color(type(self).__name__, self.clear_cache, checked=self.isChecked())
         else:
-            effective_style, self.clear_cache = get_effective_style(self)
+            effective_style, self.clear_cache = get_effective_style(self, checked=self.isChecked())
         if event:
             super().leaveEvent(event)
         self.updateIcon(effective_style)
