@@ -8,7 +8,7 @@ from functools import lru_cache
 from PySide6.QtWidgets import (
     QPushButton, QWidget,
     QLabel, QHBoxLayout, QStyle, QStyleOption,
-    QSizePolicy, QSpacerItem, QRadioButton
+    QSizePolicy, QSpacerItem, QRadioButton, QToolButton
 )
 from PySide6.QtGui import QPixmap, QPainter, QIcon, QColor
 from PySide6.QtSvg import QSvgRenderer
@@ -524,19 +524,13 @@ class QSvgButtonIcon(QSvgWidget):
         self.clicked.emit()
 
 
-class Config:
-    def set_name(self, name):
-        self.setObjectName(name)
-        self.__class__.__name__ = name
 
-
-class SVGRenderRadioButton(QRadioButton, Config):
+class SVGRenderRadioButton(QRadioButton):
     enter = Signal()
     leave = Signal()
 
     def __init__(self, svg_string: Optional[str] = None, size_ic: Optional[Tuple[int, int]] = (25, 25), *args, **kwargs):
         super().__init__(*args, **kwargs)
-        Config.__init__(self)
         self.clear_cache = None
         self.size_ic = size_ic
         self.svg_string = svg_string
@@ -545,6 +539,11 @@ class SVGRenderRadioButton(QRadioButton, Config):
         self.setCheckable(False)
         self.toggled.connect(lambda e: self.leaveEvent())
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def set_name(self, name):
+        self.setObjectName(name)
+        self.__class__.__name__ = name
+        self.leaveEvent()
 
     def event(self, e):
         super().event(e)
@@ -645,18 +644,23 @@ class SVGRenderRadioButton(QRadioButton, Config):
         super().mouseReleaseEvent(event)
 
 
-class SVGRenderButton(QPushButton, Config):
+class SVGRenderButton(QToolButton):
     enter = Signal()
     leave = Signal()
 
     def __init__(self, svg_string: Optional[str] = None, size_ic: Optional[Tuple[int, int]] = (25, 25), *args, **kwargs):
         super().__init__(*args, **kwargs)
-        Config.__init__(self)
         self.clear_cache = None
         self.size_ic = size_ic
         self.svg_string = svg_string
         self.closed = False
         self.set_string_svg(self.svg_string)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def set_name(self, name):
+        self.setObjectName(name)
+        self.__class__.__name__ = name
+        self.leaveEvent()
 
     def event(self, e):
         super().event(e)
@@ -757,19 +761,24 @@ class SVGRenderButton(QPushButton, Config):
         super().mouseReleaseEvent(event)
 
 
-class SVGRenderIcon(QPushButton, Config):
+class SVGRenderIcon(QPushButton):
     enter = Signal()
     leave = Signal()
     clicked = Signal()
 
     def __init__(self, svg_string: Optional[str] = None, size_ic: Optional[Tuple[int, int]] = (25, 25), *args, **kwargs):
         super().__init__(*args, **kwargs)
-        Config.__init__(self)
         self.clear_cache = None
         self.size_ic = size_ic
         self.svg_string = svg_string
         self.closed = False
         self.set_string_svg(self.svg_string)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def set_name(self, name):
+        self.setObjectName(name)
+        self.__class__.__name__ = name
+        self.leaveEvent()
 
     def event(self, e):
         super().event(e)
