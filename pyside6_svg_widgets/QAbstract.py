@@ -696,6 +696,9 @@ class SVGRenderButton(QToolButton):
         QTimer.singleShot(100, partial(self.after_load))
 
     def after_load(self):
+        if self.closed:
+            return
+
         effective_style, self.clear_cache = get_effective_style(self, checked=True)
         effective_style, self.clear_cache = get_effective_style(self, hover=True)
         effective_style, self.clear_cache = get_effective_style(self, pressed=True)
