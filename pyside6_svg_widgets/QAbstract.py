@@ -16,6 +16,9 @@ from PySide6.QtCore import Qt, QTimer, QSize, Signal, QByteArray
 from PySide6.QtSvgWidgets import QSvgWidget
 
 
+SIZE = 35
+
+
 @lru_cache()
 def get_color(object_name, style_sheet, hover=False, pressed=False, checked=False, style_filter="icon-color"):
     style_blocks = style_sheet.split('}')
@@ -585,8 +588,8 @@ class SVGRenderRadioButton(QRadioButton):
             width = f'width="{w}"'
             h = img.split("height=\"")[1].split('"')[0]
             height = f'height="{h}"'
-            img = img.replace(width, 'width="1500"')
-            img = img.replace(height, 'height="1500"')
+            img = img.replace(width, f'width="{SIZE}"')
+            img = img.replace(height, f'height="{SIZE}"')
 
         pixel = QPixmap(img)
         pixel.loadFromData(img.encode("utf-8"), "svg")
@@ -714,8 +717,8 @@ class SVGRenderButton(QToolButton):
             width = f'width="{w}"'
             h = img.split("height=\"")[1].split('"')[0]
             height = f'height="{h}"'
-            img = img.replace(width, 'width="1500"')
-            img = img.replace(height, 'height="1500"')
+            img = img.replace(width, f'width="{SIZE}"')
+            img = img.replace(height, f'height="{SIZE}"')
 
         pixel = QPixmap(img)
         pixel.loadFromData(img.encode("utf-8"), "svg")
@@ -841,8 +844,8 @@ class SVGRenderIcon(QPushButton):
             width = f'width="{w}"'
             h = img.split("height=\"")[1].split('"')[0]
             height = f'height="{h}"'
-            img = img.replace(width, 'width="1500"')
-            img = img.replace(height, 'height="1500"')
+            img = img.replace(width, f'width="{SIZE}"')
+            img = img.replace(height, f'height="{SIZE}"')
 
         pixel = QPixmap(img)
         pixel.loadFromData(img.encode("utf-8"), "svg")
