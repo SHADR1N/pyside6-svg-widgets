@@ -123,6 +123,7 @@ class QDropButton(QWidget):
 
         style = self.style()
         style.drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, painter, self)
+        painter.save()
 
     def setIconSize(self, width: Union[int, QSize], height: Optional[int] = None):
         if isinstance(width, QSize):
@@ -193,6 +194,7 @@ class QDropButton(QWidget):
         painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
         painter.fillRect(pixmap.rect(), color)
         painter.end()
+        painter.save()
         self.label.setStyleSheet("* {color: {COLOR};}".replace("{COLOR}", color))
         return pixmap
 
@@ -307,6 +309,7 @@ class QIconSvg(QLabel):
         painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
         painter.fillRect(pixmap.rect(), color)
         painter.end()
+        painter.save()
         self.setPixmap(pixmap)
 
     def enterEvent(self, event):
@@ -400,6 +403,7 @@ class QSvgButton(QPushButton):
         painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
         painter.fillRect(pixmap.rect(), color)
         painter.end()
+        painter.save()
         self.setIcon(QIcon(pixmap))
 
     def enterEvent(self, event):
@@ -787,7 +791,6 @@ class SVGRenderButton(QToolButton):
 class SVGRenderIcon(QPushButton):
     enter = Signal()
     leave = Signal()
-    clicked = Signal()
 
     def __init__(self, svg_string: Optional[str] = None, size_ic: Optional[Tuple[int, int]] = (25, 25), *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -909,4 +912,3 @@ class SVGRenderIcon(QPushButton):
 
         self.updateIcon(effective_style)
         super().mouseReleaseEvent(event)
-        self.clicked.emit()
