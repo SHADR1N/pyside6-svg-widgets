@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QPixmap, QPainter, QIcon, QColor
 from PyQt5.QtSvg import QSvgRenderer
-from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray
+from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QEvent
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtCore import pyqtSignal as Signal
 
@@ -412,7 +412,7 @@ class QSvgButton(QPushButton):
 
     def event(self, e):
         super().event(e)
-        if str(e.type()) == "Type.PaletteChange":
+        if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             self.leaveEvent(None)
         return True
 
@@ -493,7 +493,7 @@ class QSvgButtonIcon(QSvgWidget):
 
     def event(self, e):
         super().event(e)
-        if str(e.type()) == "Type.PaletteChange":
+        if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             self.leaveEvent(None)
         return True
 
@@ -593,7 +593,7 @@ class SVGRenderRadioButton(QRadioButton):
 
     def event(self, e):
         super().event(e)
-        if str(e.type()) == "Type.PaletteChange":
+        if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             get_color.cache_clear()
             self.clear_cache = None
             self.after_load()
@@ -714,11 +714,12 @@ class SVGRenderButton(QToolButton):
     def event(self, e):
         super().event(e)
 
-        if str(e.type()) == "Type.PaletteChange":
+        if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             get_color.cache_clear()
             self.clear_cache = None
             self.after_load()
             self.leaveEvent(None)
+
         return True
 
     def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
@@ -837,7 +838,7 @@ class SVGRenderIcon(QPushButton):
 
     def event(self, e):
         super().event(e)
-        if str(e.type()) == "Type.PaletteChange":
+        if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             get_color.cache_clear()
             self.clear_cache = None
             self.after_load()
