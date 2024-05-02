@@ -6,15 +6,16 @@ import xml.etree.ElementTree as Et
 
 from functools import lru_cache
 
-from PySide6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QPushButton, QWidget,
     QLabel, QHBoxLayout, QStyle, QStyleOption,
     QSizePolicy, QSpacerItem, QRadioButton, QToolButton
 )
-from PySide6.QtGui import QPixmap, QPainter, QIcon, QColor
-from PySide6.QtSvg import QSvgRenderer
-from PySide6.QtCore import Qt, QTimer, QSize, Signal, QByteArray
-from PySide6.QtSvgWidgets import QSvgWidget
+from PyQt5.QtGui import QPixmap, QPainter, QIcon, QColor
+from PyQt5.QtSvg import QSvgRenderer
+from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray
+from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtCore import pyqtSignal as Signal
 
 SIZE = 35
 
@@ -613,7 +614,7 @@ class SVGRenderRadioButton(QRadioButton):
             return
 
         pixel = self.svg_to_pixmap(self.svg_string, *self.size_ic, color)
-        self.setIcon(pixel)
+        self.setIcon(QIcon(pixel))
         self.setIconSize(QSize(*self.size_ic))
 
     def enterEvent(self, event=None):
@@ -763,7 +764,7 @@ class SVGRenderButton(QToolButton):
             return
 
         pixel = self.svg_to_pixmap(self.svg_string, *self.size_ic, color)
-        self.setIcon(pixel)
+        self.setIcon(QIcon(pixel))
         self.setIconSize(QSize(*self.size_ic))
 
     def enterEvent(self, event=None):
@@ -894,9 +895,14 @@ class SVGRenderIcon(QPushButton):
 
         renderer = QSvgRenderer(svg_filename)
         pixmap = QPixmap(width, height)
+        pixmap = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio,
+                               Qt.TransformationMode.SmoothTransformation)
+        pixmap = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio,
+                               Qt.TransformationMode.SmoothTransformation)
         pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(pixmap)
         renderer.render(painter)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setCompositionMode(
             painter.CompositionMode.CompositionMode_SourceIn)
         painter.fillRect(pixmap.rect(), color)
@@ -908,7 +914,7 @@ class SVGRenderIcon(QPushButton):
             return
 
         pixel = self.svg_to_pixmap(self.svg_string, *self.size_ic, color)
-        self.setIcon(pixel)
+        self.setIcon(QIcon(pixel))
         self.setIconSize(QSize(*self.size_ic))
 
     def enterEvent(self, event=None):
