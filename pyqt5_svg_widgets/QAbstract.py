@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtCore import pyqtSignal as Signal
 
-SIZE = 35
+SIZE = 55
 
 
 @lru_cache()
@@ -84,6 +84,43 @@ def get_effective_style(init_widget: QWidget, hover=False, pressed=False, checke
         except RuntimeError:
             break
     return None, None
+
+
+def svg_to_pixmap(
+        svg_filename: str,
+        width: int,
+        height: int,
+        color: Union[QColor, str]
+) -> QPixmap:
+    if svg_filename.startswith("<svg"):
+        if "width=" in svg_filename and "height=" in svg_filename:
+            w = svg_filename.split("width=\"")[1].split('"')[0]
+            _width = f'width="{w}"'
+            h = svg_filename.split("height=\"")[1].split('"')[0]
+            _height = f'height="{h}"'
+            svg_filename = (svg_filename.
+                            replace(_width, f'width="{SIZE}"').
+                            replace(_height, f'height="{SIZE}"'))
+
+        svg_bytes = svg_filename.encode('utf-8')
+        svg_filename = QByteArray(svg_bytes)
+
+    if not isinstance(color, QColor):
+        color = QColor(color)
+
+    renderer = QSvgRenderer(svg_filename)
+    pixmap = QPixmap(width * 10, height * 10)
+    pixmap = pixmap.scaled(width * 10, height * 10, Qt.AspectRatioMode.KeepAspectRatio,
+                           Qt.TransformationMode.SmoothTransformation)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    renderer.render(painter)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setCompositionMode(
+        painter.CompositionMode.CompositionMode_SourceIn)
+    painter.fillRect(pixmap.rect(), color)
+    painter.end()
+    return pixmap
 
 
 class QDropButton(QWidget):
@@ -584,36 +621,11 @@ class SVGRenderRadioButton(QRadioButton):
         effective_style, self.clear_cache = get_effective_style(self, pressed=True)
         effective_style, self.clear_cache = get_effective_style(self)
 
-    def svg_to_pixmap(
-            self,
-            svg_filename: str,
-            width: int,
-            height: int,
-            color: Union[QColor, str]
-    ) -> QPixmap:
-        if svg_filename.startswith("<svg"):
-            svg_bytes = svg_filename.encode('utf-8')
-            svg_filename = QByteArray(svg_bytes)
-
-        if not isinstance(color, QColor):
-            color = QColor(color)
-
-        renderer = QSvgRenderer(svg_filename)
-        pixmap = QPixmap(width, height)
-        pixmap.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(pixmap)
-        renderer.render(painter)
-        painter.setCompositionMode(
-            painter.CompositionMode.CompositionMode_SourceIn)
-        painter.fillRect(pixmap.rect(), color)
-        painter.end()
-        return pixmap
-
     def updateIcon(self, color):
         if not color or not self.svg_string:
             return
 
-        pixel = self.svg_to_pixmap(self.svg_string, *self.size_ic, color)
+        pixel = svg_to_pixmap(self.svg_string, *self.size_ic, color)
         self.setIcon(QIcon(pixel))
         self.setIconSize(QSize(*self.size_ic))
 
@@ -734,36 +746,11 @@ class SVGRenderButton(QToolButton):
         effective_style, self.clear_cache = get_effective_style(self, pressed=True)
         effective_style, self.clear_cache = get_effective_style(self)
 
-    def svg_to_pixmap(
-            self,
-            svg_filename: str,
-            width: int,
-            height: int,
-            color: Union[QColor, str]
-    ) -> QPixmap:
-        if svg_filename.startswith("<svg"):
-            svg_bytes = svg_filename.encode('utf-8')
-            svg_filename = QByteArray(svg_bytes)
-
-        if not isinstance(color, QColor):
-            color = QColor(color)
-
-        renderer = QSvgRenderer(svg_filename)
-        pixmap = QPixmap(width, height)
-        pixmap.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(pixmap)
-        renderer.render(painter)
-        painter.setCompositionMode(
-            painter.CompositionMode.CompositionMode_SourceIn)
-        painter.fillRect(pixmap.rect(), color)
-        painter.end()
-        return pixmap
-
     def updateIcon(self, color):
         if not color or not self.svg_string:
             return
 
-        pixel = self.svg_to_pixmap(self.svg_string, *self.size_ic, color)
+        pixel = svg_to_pixmap(self.svg_string, *self.size_ic, color)
         self.setIcon(QIcon(pixel))
         self.setIconSize(QSize(*self.size_ic))
 
@@ -879,41 +866,11 @@ class SVGRenderIcon(QPushButton):
         effective_style, self.clear_cache = get_effective_style(self, pressed=True)
         effective_style, self.clear_cache = get_effective_style(self)
 
-    def svg_to_pixmap(
-            self,
-            svg_filename: str,
-            width: int,
-            height: int,
-            color: Union[QColor, str]
-    ) -> QPixmap:
-        if svg_filename.startswith("<svg"):
-            svg_bytes = svg_filename.encode('utf-8')
-            svg_filename = QByteArray(svg_bytes)
-
-        if not isinstance(color, QColor):
-            color = QColor(color)
-
-        renderer = QSvgRenderer(svg_filename)
-        pixmap = QPixmap(width, height)
-        pixmap = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio,
-                               Qt.TransformationMode.SmoothTransformation)
-        pixmap = pixmap.scaled(width, height, Qt.AspectRatioMode.KeepAspectRatio,
-                               Qt.TransformationMode.SmoothTransformation)
-        pixmap.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(pixmap)
-        renderer.render(painter)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setCompositionMode(
-            painter.CompositionMode.CompositionMode_SourceIn)
-        painter.fillRect(pixmap.rect(), color)
-        painter.end()
-        return pixmap
-
     def updateIcon(self, color):
         if not color or not self.svg_string:
             return
 
-        pixel = self.svg_to_pixmap(self.svg_string, *self.size_ic, color)
+        pixel = svg_to_pixmap(self.svg_string, *self.size_ic, color)
         self.setIcon(QIcon(pixel))
         self.setIconSize(QSize(*self.size_ic))
 

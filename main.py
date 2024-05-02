@@ -27,13 +27,11 @@ SVGRenderIcon, QIconSvg, QSvgButtonIcon {
 }
 
 SVGRenderIcon:hover, SVGRenderIcon:hover, SVGRenderIcon:hover {
-    padding:  15px;
     color: #496EF6;
 /*  icon-color: #496EF6; */
     background: #344254;
 }
 SVGRenderIcon:pressed, SVGRenderIcon:pressed {
-    padding:  15px;
     color: #3276C3;
     /* icon-color: #3276C3; */
 }
@@ -49,12 +47,14 @@ class SvgButtonExample(QWidget):
         self.setStyleSheet(STYLE_WIDGET)
 
     def __initUi(self):
-        img = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-open-dot"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/><circle cx="14" cy="15" r="1"/></svg>'
+        img = '<svg xmlns="http://www.w3.org/2000/svg" width="1010" height="1100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-open-dot"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/><circle cx="14" cy="15" r="1"/></svg>'
+
         svg = SVGRenderIcon(svg_string=img, size_ic=(25, 25))
         svg.setObjectName(u"svgWidget")
         svg.setFixedSize(150, 50)
         svg.setText("Test button")
         svg.clicked.connect(lambda: print("clicked"))
+        svg.update()
 
         # newButton = QSvgButton()
         # newButton.setSvg('icons/message.svg')
