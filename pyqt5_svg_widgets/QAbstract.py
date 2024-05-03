@@ -17,7 +17,8 @@ from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QEvent
 from PyQt5.QtSvg import QSvgWidget
 from PyQt5.QtCore import pyqtSignal as Signal
 
-SIZE = 55
+SIZE = 25
+xSize = 10
 
 
 @lru_cache()
@@ -99,18 +100,17 @@ def svg_to_pixmap(
             h = svg_filename.split("height=\"")[1].split('"')[0]
             _height = f'height="{h}"'
             svg_filename = (svg_filename.
-                            replace(_width, f'width="{SIZE}"').
-                            replace(_height, f'height="{SIZE}"'))
-
+                            replace(_width, f'width="{SIZE}px"').
+                            replace(_height, f'height="{SIZE}px"'))
         svg_bytes = svg_filename.encode('utf-8')
-        svg_filename = QByteArray(svg_bytes)
+        svg_qbytes = QByteArray(svg_bytes)
 
     if not isinstance(color, QColor):
         color = QColor(color)
 
-    renderer = QSvgRenderer(svg_filename)
-    pixmap = QPixmap(width * 10, height * 10)
-    pixmap = pixmap.scaled(width * 10, height * 10, Qt.AspectRatioMode.KeepAspectRatio,
+    renderer = QSvgRenderer(svg_qbytes)
+    pixmap = QPixmap(width * xSize, height * xSize)
+    pixmap = pixmap.scaled(width * xSize, height * xSize, Qt.AspectRatioMode.KeepAspectRatio,
                            Qt.TransformationMode.SmoothTransformation)
     pixmap.fill(Qt.GlobalColor.transparent)
     painter = QPainter(pixmap)
