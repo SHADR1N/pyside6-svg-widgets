@@ -9,18 +9,15 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
 setup(
-    name='pyside6-svg-widgets',
-    version='0.2.19',
+    name='Python Qt SVG widgets',
+    version='0.2.20',
     author='SHADRIN',
     author_email='none@gmail.com',
     license='MIT',
     packages=find_packages(),
-    description='PySide6 svg widgets',
+    description='Qt SVG widgets',
     url='https://github.com/SHADR1N/pyside6-svg-widgets.git',
     long_description_content_type='text/markdown',
     long_description=long_description,
-    install_requires=[
-        'PySide6>=6.4.0',
-        'PyQt5>=5.15.0'
-    ]
+    install_requires=[]
 )

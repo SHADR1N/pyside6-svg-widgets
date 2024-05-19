@@ -828,6 +828,7 @@ class SVGRenderIcon(QPushButton):
         self.size_ic = size_ic
         self.svg_string = svg_string
         self.closed = False
+        self.toggled.connect(lambda e: self.leaveEvent())
         self.set_string_svg(self.svg_string)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
