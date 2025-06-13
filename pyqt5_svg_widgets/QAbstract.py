@@ -411,10 +411,9 @@ class QSvgButton(QPushButton):
             self.setSvg(self.svg_path)
 
     def event(self, e):
-        super().event(e)
         if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             self.leaveEvent(None)
-        return True
+        return super().event(e)
 
     def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
         if isinstance(width, QSize):
@@ -492,10 +491,9 @@ class QSvgButtonIcon(QSvgWidget):
             self.setSvg(self.svg_path)
 
     def event(self, e):
-        super().event(e)
         if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             self.leaveEvent(None)
-        return True
+        return super().event(e)
 
     def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
         if isinstance(width, QSize):
@@ -592,13 +590,12 @@ class SVGRenderRadioButton(QRadioButton):
         self.leaveEvent()
 
     def event(self, e):
-        super().event(e)
         if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             get_color.cache_clear()
             self.clear_cache = None
             self.after_load()
             self.leaveEvent(None)
-        return True
+        return super().event(e)
 
     def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
         if isinstance(width, QSize):
@@ -712,15 +709,13 @@ class SVGRenderButton(QToolButton):
         self.leaveEvent()
 
     def event(self, e):
-        super().event(e)
-
         if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             get_color.cache_clear()
             self.clear_cache = None
             self.after_load()
             self.leaveEvent(None)
 
-        return True
+        return super().event(e)
 
     def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
         if isinstance(width, QSize):
@@ -838,13 +833,12 @@ class SVGRenderIcon(QPushButton):
         self.leaveEvent()
 
     def event(self, e):
-        super().event(e)
         if str(e.type()) == "Type.PaletteChange" or e.type() == QEvent.Type.PaletteChange:
             get_color.cache_clear()
             self.clear_cache = None
             self.after_load()
             self.leaveEvent(None)
-        return True
+        return super().event(e)
 
     def setSvgSize(self, width: Union[int, QSize], height: Optional[int] = None):
         if isinstance(width, QSize):
