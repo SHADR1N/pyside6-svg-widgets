@@ -2,12 +2,12 @@ from functools import lru_cache
 from functools import lru_cache
 from typing import Optional, Union, Dict
 
-from PyQt5.QtCore import Qt, QSize, QEvent, pyqtProperty, QRect
-from PyQt5.QtGui import QPixmap, QPainter, QIcon, QColor, QPalette, QImage, QFont
+from PyQt5.QtCore import Qt, QSize, QEvent, pyqtProperty, QRect, pyqtSignal, QPropertyAnimation, QRectF
+from PyQt5.QtGui import QPixmap, QPainter, QIcon, QColor, QPalette, QImage, QFont, QBrush, QPen
 from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import (
     QPushButton, QWidget, QLabel, QStyle, QStyleOption,
-    QRadioButton, QToolButton, QStyleOptionButton, QSizePolicy, QFrame, QStyleOptionFrame, QStyleOptionToolButton
+    QRadioButton, QToolButton, QStyleOptionButton, QSizePolicy, QFrame, QStyleOptionFrame, QStyleOptionToolButton, QHBoxLayout, QAbstractButton
 )
 
 # Константы
@@ -615,3 +615,180 @@ class SvgToolButton(QToolButton):
                             self.height())
             painter.setPen(self._getColor())
             painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, self.text())
+
+class ToggleSwitchButton(QPushButton):
+    def __init__(self, text, parent=None):
+        super().__init__(text, parent)
+        self.setCheckable(True)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setMinimumHeight(36)
+        self.setStyleSheet(self._get_style(False))
+
+    def setChecked(self, checked):
+        super().setChecked(checked)
+        self.setStyleSheet(self._get_style(checked))
+
+    def _get_style(self, checked):
+        if checked:
+            return """
+                QPushButton {
+                    background-color: #22c55e;
+                    color: #fff;
+                    border-radius: 18px;
+                    font-weight: bold;
+                    padding: 0 24px;
+                    border: none;
+                }
+            """
+        else:
+            return """
+                QPushButton {
+                    background-color: #e5e7eb;
+                    color: #444;
+                    border-radius: 18px;
+                    font-weight: normal;
+                    padding: 0 24px;
+                    border: none;
+                }
+            """
+
+class ToggleSwitchGroup(QWidget):
+    toggled = pyqtSignal(int, str)  # индекс, текст
+
+    def __init__(self, options, parent=None):
+        super().__init__(parent)
+        self._buttons = []
+        self._current = 0
+        layout = QHBoxLayout(self)
+        layout.setSpacing(12)
+        layout.setContentsMargins(0, 0, 0, 0)
+        for i, text in enumerate(options):
+            btn = ToggleSwitchButton(text)
+            btn.clicked.connect(lambda checked, idx=i: self.setChecked(idx))
+            self._buttons.append(btn)
+            layout.addWidget(btn)
+        if self._buttons:
+            self._buttons[0].setChecked(True)
+
+    def setChecked(self, idx):
+        for i, btn in enumerate(self._buttons):
+            btn.setChecked(i == idx)
+        self._current = idx
+        self.toggled.emit(idx, self._buttons[idx].text())
+
+    def currentIndex(self):
+        return self._current
+
+    def currentText(self):
+        return self._buttons[self._current].text()
+
+class SwitchButton(QAbstractButton):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._offset = 1.0 if self.isChecked() else 0.0
+        self.setCheckable(True)
+        self.setMinimumSize(64, 36)
+        self._animation = QPropertyAnimation(self, b"offset", self)
+        self._icon_size = 20
+        self._duration = 180
+        self.setCursor(Qt.PointingHandCursor)
+        self.setProperty('checked', self.isChecked())
+        self.toggled.connect(self._on_toggled)
+
+    def _on_toggled(self, checked):
+        self.setProperty('checked', checked)
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self._start_anim(checked)
+
+    def _start_anim(self, checked):
+        self._animation.stop()
+        start = self._offset
+        end = 1.0 if checked else 0.0
+        self._animation.setStartValue(start)
+        self._animation.setEndValue(end)
+        self._animation.setDuration(self._duration)
+        self._animation.start()
+
+    def _get_offset(self):
+        return getattr(self, "_offset", 0.0)
+
+    def _set_offset(self, value):
+        self._offset = value
+        self.update()
+
+    offset = pyqtProperty(float, _get_offset, _set_offset)
+
+    def sizeHint(self):
+        return QSize(64, 36)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        w, h = self.width(), self.height()
+        margin = 4
+        radius = h / 2
+        # Получаем цвета из стиля
+        bg_color = self._getStyleColor('background', '#16e085' if self.isChecked() else '#39394a')
+        thumb_color = self._getStyleColor('thumb', '#e5e7eb')
+        check_color = self._getStyleColor('check', '#fff')
+        cross_color = self._getStyleColor('cross', '#fff')
+        # Фон
+        painter.setBrush(QBrush(bg_color))
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(QRectF(0, 0, w, h), radius, radius)
+        # Кружок
+        x = margin + (w - 2 * margin - h + 2 * margin) * self._offset
+        thumb_rect = QRectF(x, margin, h - 2 * margin, h - 2 * margin)
+        painter.setBrush(QBrush(thumb_color))
+        painter.drawEllipse(thumb_rect)
+        # Иконки внутри кружка
+        icon_rect = thumb_rect.adjusted(4, 4, -4, -4)
+        # Крестик (затухает вправо)
+        painter.save()
+        painter.setOpacity(1.0 - self._offset)
+        self._draw_cross(painter, icon_rect, cross_color)
+        painter.restore()
+        # Галочка (появляется справа)
+        painter.save()
+        painter.setOpacity(self._offset)
+        self._draw_check(painter, icon_rect, check_color)
+        painter.restore()
+
+    def _getStyleColor(self, role, default):
+        # role: 'background', 'thumb', 'check', 'cross'
+        # Чтение из palette или property
+        if role == 'background':
+            if self.property('checked'):
+                return self.palette().color(QPalette.Highlight)
+            else:
+                return self.palette().color(QPalette.Mid)
+        elif role == 'thumb':
+            return self.palette().color(QPalette.Base)
+        elif role == 'check':
+            return QColor(self.property('checkColor')) if self.property('checkColor') else QColor(default)
+        elif role == 'cross':
+            return QColor(self.property('crossColor')) if self.property('crossColor') else QColor(default)
+        return QColor(default)
+
+    def _draw_check(self, painter, rect, color):
+        pen = QPen(color, 3, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        painter.setPen(pen)
+        # Галочка
+        x1, y1 = rect.left() + rect.width() * 0.15, rect.top() + rect.height() * 0.55
+        x2, y2 = rect.left() + rect.width() * 0.45, rect.bottom() - rect.height() * 0.2
+        x3, y3 = rect.right() - rect.width() * 0.15, rect.top() + rect.height() * 0.25
+        painter.drawLine(x1, y1, x2, y2)
+        painter.drawLine(x2, y2, x3, y3)
+
+    def _draw_cross(self, painter, rect, color):
+        pen = QPen(color, 3, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        painter.setPen(pen)
+        # Крестик
+        x1, y1 = rect.left() + rect.width() * 0.25, rect.top() + rect.height() * 0.25
+        x2, y2 = rect.right() - rect.width() * 0.25, rect.bottom() - rect.height() * 0.25
+        x3, y3 = rect.right() - rect.width() * 0.25, rect.top() + rect.height() * 0.25
+        x4, y4 = rect.left() + rect.width() * 0.25, rect.bottom() - rect.height() * 0.25
+        painter.drawLine(x1, y1, x2, y2)
+        painter.drawLine(x3, y3, x4, y4)
+

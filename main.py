@@ -2,11 +2,12 @@ import sys
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout,
-    QPushButton, QColorDialog, QComboBox
+    QPushButton, QColorDialog, QComboBox, QLabel
 )
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPalette, QColor
-from pyqt5_svg_widgets.QAbstract import SvgButton, SvgLabel, SvgRadioButton, SvgToolButton
+from pyqt5_svg_widgets.QAbstract import SvgButton, SvgLabel, SvgRadioButton, SvgToolButton, ToggleSwitchGroup, \
+    SwitchButton
 
 
 class SvgWidgetsExample(QMainWindow):
@@ -75,7 +76,28 @@ class SvgWidgetsExample(QMainWindow):
         self.tool_button = SvgToolButton(svg_path="x.svg", text="Инструмент", parent=self)
         self.tool_button.setIconSize(QSize(32, 32))
         widgets_layout.addWidget(self.tool_button)
-        
+
+        toggle = ToggleSwitchGroup(["Off", "Yes", "Auto", "Custom"])
+        toggle.toggled.connect(lambda idx, text: print(f"Выбрано: {text}"))
+        widgets_layout.addWidget(toggle)
+
+        # --- Пример SwitchButton ---
+        self.switch_label = QLabel("Выкл")
+        self.switch_label.setAlignment(Qt.AlignCenter)
+        self.switch = SwitchButton()
+        self.switch.setChecked(False)
+        self.switch.setFixedWidth(80)
+        self.switch.setStyleSheet('''
+            SwitchButton[checked="true"] {
+                background: #16e085;
+            }
+            SwitchButton[checked="false"] {
+                background: #39394a;
+            }
+        ''')
+        widgets_layout.addWidget(self.switch, alignment=Qt.AlignCenter)
+        # --- конец SwitchButton ---
+
         main_layout.addWidget(widgets_container)
         
         # Применяем начальную тему
