@@ -7,7 +7,7 @@ from PyQt5.QtGui import QPixmap, QPainter, QIcon, QColor, QPalette, QImage, QFon
 from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import (
     QPushButton, QWidget, QLabel, QStyle, QStyleOption,
-    QRadioButton, QToolButton, QStyleOptionButton, QSizePolicy
+    QRadioButton, QToolButton, QStyleOptionButton, QSizePolicy, QFrame, QStyleOptionFrame, QStyleOptionToolButton
 )
 
 # Константы
@@ -337,75 +337,281 @@ class SvgButton(QPushButton):
 class SvgLabel(QLabel):
     """Метка с SVG иконкой"""
     def __init__(self, svg_path: str, text: str = "", parent=None):
-        super().__init__(text, parent)  # Сначала инициализируем базовый класс
-        self._svg_widget = SvgWidget(svg_path, self)
-        self._svg_widget.setFixedSize(self.size())
-        self._svg_widget.setText(text)
+        super().__init__(text, parent)
+        self._renderer = SvgRenderer(svg_path)
+        self._icon_size = QSize(24, 24)
+        self._is_hovered = False
         
-    def setText(self, text: str):
-        super().setText(text)
-        self._svg_widget.setText(text)
+        self.setMouseTracking(True)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         
     def setIconSize(self, size: QSize):
-        self._svg_widget.setIconSize(size)
-        self.setFixedSize(size)
+        self._icon_size = size
+        self.updateGeometry()
+        self.update()
         
-    def resizeEvent(self, event):
-        self._svg_widget.setFixedSize(self.size())
-        super().resizeEvent(event)
+    def sizeHint(self) -> QSize:
+        """Возвращает рекомендуемый размер виджета"""
+        fm = self.fontMetrics()
+        text_width = fm.horizontalAdvance(self.text())
+        
+        opt = QStyleOption()
+        opt.initFrom(self)
+        margins = self.style().pixelMetric(QStyle.PM_DefaultFrameWidth, opt, self) * 2
+        
+        width = self._icon_size.width() + text_width + margins * 2
+        if text_width > 0:
+            width += 10
+            
+        height = max(self._icon_size.height(), fm.height()) + margins * 2
+        
+        return QSize(width, height)
+        
+    def minimumSizeHint(self) -> QSize:
+        return self.sizeHint()
+        
+    def enterEvent(self, event):
+        self._is_hovered = True
+        self.update()
+        super().enterEvent(event)
+        
+    def leaveEvent(self, event):
+        self._is_hovered = False
+        self.update()
+        super().leaveEvent(event)
+        
+    def _getColor(self) -> QColor:
+        if self._is_hovered:
+            return self.palette().color(QPalette.Highlight)
+        return self.palette().color(QPalette.WindowText)
         
     def paintEvent(self, event):
-        # Рисуем стандартную метку
-        super().paintEvent(event)
-        # SVG отрисовывается автоматически через дочерний виджет
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.setRenderHint(QPainter.TextAntialiasing)
+        
+        opt = QStyleOptionFrame()
+        opt.initFrom(self)
+        opt.frameShape = QFrame.StyledPanel
+        opt.lineWidth = self.style().pixelMetric(QStyle.PM_DefaultFrameWidth, opt, self)
+        opt.midLineWidth = 0
+        opt.state |= QStyle.State_Sunken
+        
+        self.style().drawPrimitive(QStyle.PE_Frame, opt, painter, self)
+        
+        margins = self.style().pixelMetric(QStyle.PM_DefaultFrameWidth, opt, self)
+        
+        # Рисуем SVG
+        pixmap = self._renderer.render(self._icon_size, self._getColor())
+        icon_rect = QRect(margins, 
+                         (self.height() - self._icon_size.height()) // 2,
+                         self._icon_size.width(), 
+                         self._icon_size.height())
+        painter.drawPixmap(icon_rect, pixmap)
+        
+        # Рисуем текст
+        if self.text():
+            text_rect = QRect(icon_rect.right() + 10, 0,
+                            self.width() - icon_rect.right() - margins,
+                            self.height())
+            painter.setPen(self._getColor())
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, self.text())
 
 class SvgRadioButton(QRadioButton):
     """Радио-кнопка с SVG иконкой"""
     def __init__(self, svg_path: str, text: str = "", parent=None):
-        super().__init__(text, parent)  # Сначала инициализируем базовый класс
-        self._svg_widget = SvgWidget(svg_path, self)
-        self._svg_widget.setFixedSize(self.size())
-        self._svg_widget.setText(text)
+        super().__init__(text, parent)
+        self._renderer = SvgRenderer(svg_path)
+        self._icon_size = QSize(24, 24)
+        self._is_hovered = False
         
-    def setText(self, text: str):
-        super().setText(text)
-        self._svg_widget.setText(text)
+        self.setMouseTracking(True)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         
     def setIconSize(self, size: QSize):
-        self._svg_widget.setIconSize(size)
-        self.setFixedSize(size)
+        self._icon_size = size
+        self.updateGeometry()
+        self.update()
         
-    def resizeEvent(self, event):
-        self._svg_widget.setFixedSize(self.size())
-        super().resizeEvent(event)
+    def sizeHint(self) -> QSize:
+        fm = self.fontMetrics()
+        text_width = fm.horizontalAdvance(self.text())
+        
+        opt = QStyleOptionButton()
+        opt.initFrom(self)
+        opt.text = ""
+        opt.iconSize = self._icon_size
+        
+        indicator_width = self.style().pixelMetric(QStyle.PM_ExclusiveIndicatorWidth, opt, self)
+        indicator_height = self.style().pixelMetric(QStyle.PM_ExclusiveIndicatorHeight, opt, self)
+        spacing = self.style().pixelMetric(QStyle.PM_RadioButtonLabelSpacing, opt, self)
+        
+        width = indicator_width + spacing + self._icon_size.width() + text_width
+        if text_width > 0:
+            width += 10
+            
+        height = max(indicator_height, self._icon_size.height(), fm.height())
+        
+        return QSize(width, height)
+        
+    def minimumSizeHint(self) -> QSize:
+        return self.sizeHint()
+        
+    def enterEvent(self, event):
+        self._is_hovered = True
+        self.update()
+        super().enterEvent(event)
+        
+    def leaveEvent(self, event):
+        self._is_hovered = False
+        self.update()
+        super().leaveEvent(event)
+        
+    def _getColor(self) -> QColor:
+        if self._is_hovered:
+            return self.palette().color(QPalette.Highlight)
+        return self.palette().color(QPalette.WindowText)
         
     def paintEvent(self, event):
-        # Рисуем стандартную радио-кнопку
-        super().paintEvent(event)
-        # SVG отрисовывается автоматически через дочерний виджет
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.setRenderHint(QPainter.TextAntialiasing)
+        
+        opt = QStyleOptionButton()
+        opt.initFrom(self)
+        opt.text = ""
+        opt.iconSize = self._icon_size
+        if self.isChecked():
+            opt.state |= QStyle.State_On
+        if self._is_hovered:
+            opt.state |= QStyle.State_MouseOver
+            
+        # Рисуем индикатор
+        indicator_rect = self.style().subElementRect(QStyle.SE_RadioButtonIndicator, opt, self)
+        self.style().drawPrimitive(QStyle.PE_IndicatorRadioButton, opt, painter, self)
+        
+        # Рисуем SVG
+        pixmap = self._renderer.render(self._icon_size, self._getColor())
+        icon_rect = QRect(indicator_rect.right() + 5,
+                         (self.height() - self._icon_size.height()) // 2,
+                         self._icon_size.width(),
+                         self._icon_size.height())
+        painter.drawPixmap(icon_rect, pixmap)
+        
+        # Рисуем текст
+        if self.text():
+            text_rect = QRect(icon_rect.right() + 10, 0,
+                            self.width() - icon_rect.right() - 5,
+                            self.height())
+            painter.setPen(self._getColor())
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, self.text())
 
 class SvgToolButton(QToolButton):
     """Инструментальная кнопка с SVG иконкой"""
     def __init__(self, svg_path: str, text: str = "", parent=None):
-        super().__init__(parent)  # Сначала инициализируем базовый класс
-        self.setText(text)  # Устанавливаем текст после инициализации
-        self._svg_widget = SvgWidget(svg_path, self)
-        self._svg_widget.setFixedSize(self.size())
-        self._svg_widget.setText(text)
+        super().__init__(parent)
+        self._renderer = SvgRenderer(svg_path)
+        self._icon_size = QSize(24, 24)
+        self._is_hovered = False
+        self._is_pressed = False
         
-    def setText(self, text: str):
-        super().setText(text)
-        self._svg_widget.setText(text)
+        self.setText(text)
+        self.setMouseTracking(True)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         
     def setIconSize(self, size: QSize):
-        self._svg_widget.setIconSize(size)
-        self.setFixedSize(size)
+        self._icon_size = size
+        self.updateGeometry()
+        self.update()
         
-    def resizeEvent(self, event):
-        self._svg_widget.setFixedSize(self.size())
-        super().resizeEvent(event)
+    def sizeHint(self) -> QSize:
+        fm = self.fontMetrics()
+        text_width = fm.horizontalAdvance(self.text())
+        
+        opt = QStyleOptionToolButton()
+        opt.initFrom(self)
+        opt.text = self.text()
+        opt.iconSize = self._icon_size
+        opt.toolButtonStyle = Qt.ToolButtonTextBesideIcon
+        
+        margins = self.style().pixelMetric(QStyle.PM_ButtonMargin, opt, self)
+        padding = self.style().pixelMetric(QStyle.PM_DefaultFrameWidth, opt, self) * 2
+        
+        width = self._icon_size.width() + text_width + margins * 2 + padding * 2
+        if text_width > 0:
+            width += 10
+            
+        height = max(self._icon_size.height(), fm.height()) + margins * 2 + padding * 2
+        
+        return QSize(width, height)
+        
+    def minimumSizeHint(self) -> QSize:
+        return self.sizeHint()
+        
+    def enterEvent(self, event):
+        self._is_hovered = True
+        self.update()
+        super().enterEvent(event)
+        
+    def leaveEvent(self, event):
+        self._is_hovered = False
+        self.update()
+        super().leaveEvent(event)
+        
+    def mousePressEvent(self, event):
+        self._is_pressed = True
+        self.update()
+        super().mousePressEvent(event)
+        
+    def mouseReleaseEvent(self, event):
+        self._is_pressed = False
+        self.update()
+        super().mouseReleaseEvent(event)
+        
+    def _getColor(self) -> QColor:
+        if self._is_pressed:
+            return self.palette().color(QPalette.ButtonText)
+        elif self._is_hovered:
+            return self.palette().color(QPalette.Highlight)
+        return self.palette().color(QPalette.WindowText)
         
     def paintEvent(self, event):
-        # Рисуем стандартную инструментальную кнопку
-        super().paintEvent(event)
-        # SVG отрисовывается автоматически через дочерний виджет
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.setRenderHint(QPainter.TextAntialiasing)
+        
+        opt = QStyleOptionToolButton()
+        opt.initFrom(self)
+        opt.text = ""
+        opt.iconSize = self._icon_size
+        opt.toolButtonStyle = Qt.ToolButtonTextBesideIcon
+        if self.isDown():
+            opt.state |= QStyle.State_Sunken
+        if self.isChecked():
+            opt.state |= QStyle.State_On
+        if self._is_hovered:
+            opt.state |= QStyle.State_MouseOver
+            
+        self.style().drawComplexControl(QStyle.CC_ToolButton, opt, painter, self)
+        
+        margins = self.style().pixelMetric(QStyle.PM_ButtonMargin, opt, self)
+        padding = self.style().pixelMetric(QStyle.PM_DefaultFrameWidth, opt, self)
+        
+        # Рисуем SVG
+        pixmap = self._renderer.render(self._icon_size, self._getColor())
+        icon_rect = QRect(margins + padding,
+                         (self.height() - self._icon_size.height()) // 2,
+                         self._icon_size.width(),
+                         self._icon_size.height())
+        painter.drawPixmap(icon_rect, pixmap)
+        
+        # Рисуем текст
+        if self.text():
+            text_rect = QRect(icon_rect.right() + 10, 0,
+                            self.width() - icon_rect.right() - margins - padding,
+                            self.height())
+            painter.setPen(self._getColor())
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, self.text())

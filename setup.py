@@ -10,7 +10,7 @@ with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
 
 setup(
     name='Python Qt SVG widgets',
-    version='0.2.20',
+    version='0.3.1',
     author='SHADRIN',
     author_email='none@gmail.com',
     license='MIT',
